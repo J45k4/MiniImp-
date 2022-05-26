@@ -1,0 +1,15 @@
+
+program CALCULATOR
+begin
+var PI = 3;
+var ANSWER = PI;
+var X = 9;
+
+while not is X PI begin
+  set ANSWER = ANSWER + X;
+  set X = X - 1;
+end.
+
+write ANSWER;
+
+end.
