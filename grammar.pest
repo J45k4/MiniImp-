@@ -1,11 +1,38 @@
 
-number_literal = { (ASCII_DIGIT)+ }
-string_literal = { (ASCII_ALPHA)+ }
-operator = { "+" | "-" | "*" | "/" }
+number = { (ASCII_DIGIT)+ }
+identifier = { (ASCII_ALPHA)+ }
 
-boolean = { "true" | "false" }
-boolean_operators = { "is" | "not" }
+plus = { "+" } 
+minus = { "-" }
+multi = { "*" }
+divide = { "/" }
 
-file = { SOI ~ operator ~ EOI }
+operator = { plus | minus | multi | divide }
+
+true_bool = { "true" }
+false_bool = { "false" }
+
+boolean = { true_bool | false_bool }
+
+is_bool = { "is" ~ expr }
+not_bool = { "not" ~ expr }
+
+term = { expr ~ operator ~ expr }
+
+expr = { number | identifier | boolean | is_bool | not_bool | "(" ~ expr ~ ")" }
+
+if_stmt = { "if" ~ expr ~ "then" ~ scope }
+while_stmt = { "while" ~ expr ~ scope }
+set_stmt = { "set" ~ identifier ~ "=" ~ expr }
+print_stmt = { "print" ~ expr }
+variable = { "var" ~ identifier ~ ("=" ~ expr)? }
+
+stmt = { if_stmt | while_stmt | set_stmt | variable }
+
+scope = { "begin" ~ identifier? ~ stmt* ~ "end." }
+
+
+
+file = { SOI ~ operator* ~ EOI }
 
 // flow = {  }
