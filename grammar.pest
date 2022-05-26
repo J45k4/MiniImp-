@@ -1,0 +1,11 @@
+
+number_literal = { (ASCII_DIGIT)+ }
+string_literal = { (ASCII_ALPHA)+ }
+operator = { "+" | "-" | "*" | "/" }
+
+boolean = { "true" | "false" }
+boolean_operators = { "is" | "not" }
+
+file = { SOI ~ operator ~ EOI }
+
+// flow = {  }
