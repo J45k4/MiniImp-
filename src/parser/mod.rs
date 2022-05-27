@@ -1,3 +1,4 @@
+use anyhow::Result;
 use pest::{Parser, iterators::Pairs, Token};
 
 mod parser_gen;
@@ -6,18 +7,50 @@ pub use parser_gen::*;
 
 pub struct MiniImp;
 
-pub fn parse_text(input: &str) -> Pairs<parser_gen::Rule> {
-    let r = MiniImp::parse(parser_gen::Rule::file, input).unwrap();
+pub fn parse_text(input: &str) -> Result<Pairs<parser_gen::Rule>> {
+    let r = MiniImp::parse(parser_gen::Rule::file, input)?;
 
-    r
+    Ok(r)
 }
 
-// pub fn parse_file(path: &str) -> Vec<Token<parser_gen::Rule>> {
-//     let text = std::fs::read_to_string(path).unwrap();
+#[cfg(test)]
+mod tests {
+    use super::parse_text;
 
-//     let pairs = MiniImp::parse(parser_gen::Rule::file, &text).unwrap().clone();
+    #[test]
+    fn test_parse_while() {
+        let code = r#"while true begin
+end."#;
 
-//     let tokens: Vec<_> = pairs.tokens().collect();
+        parse_text(code).unwrap();
 
-//     tokens
-// }
+        let code = "while true begin end.";
+
+        parse_text(code).unwrap();
+    }
+
+    #[test]
+    fn test_empty_file() {
+        parse_text("").unwrap();
+        parse_text(" ").unwrap();
+    }
+
+    #[test]
+    fn test_if_stmt() {
+        parse_text(r#"
+if true then
+    print("hello world");
+end.
+        "#).unwrap();
+    }
+
+    #[test]
+    fn test_var() {
+        parse_text(r#"var x = 25;"#).unwrap();
+    }
+
+    #[test]
+    fn test_set() {
+        parse_text(r#"set x = 25;"#).unwrap();
+    }
+}

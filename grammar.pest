@@ -1,9 +1,10 @@
 
 number = { (ASCII_DIGIT)+ }
 string_literal = { "\"" ~ ASCII_ALPHANUMERIC* ~ "\"" }
-identifier = { ASCII_ALPHANUMERIC+ }
+identifier = @{ ASCII_ALPHANUMERIC+ }
 
-WHITESPACE = _{ " " }
+WHITESPACE = _{ " " | NEWLINE }
+COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" | "//" ~ ANY* }
 
 plus = { "+" } 
 minus = { "-" }
@@ -11,8 +12,6 @@ multi = { "*" }
 divide = { "/" }
 
 operator = { plus | minus | multi | divide }
-
-linebreak = { NEWLINE }
 
 true_bool = { "true" }
 false_bool = { "false" }
@@ -24,20 +23,28 @@ not_bool = { "not" ~ expr }
 
 term = { expr ~ operator ~ expr }
 
+arg = { expr ~ ( "," | &")" ) }
+
 expr = { number | identifier | boolean | is_bool | not_bool | "(" ~ expr ~ ")" | string_literal }
 
-if_stmt = { "if" ~ expr ~ "then" ~ scope }
-while_stmt = { "while" ~ expr ~ NEWLINE ~ scope }
-set_stmt = { "set" ~ identifier ~ "=" ~ expr }
-print_stmt = { "print" ~ expr ~ NEWLINE? }
-variable = { "var" ~ identifier ~ ("=" ~ expr)? ~ NEWLINE? }
-program = { "program" ~ identifier ~ NEWLINE ~ scope }
-line = { "line" ~ "(" ~ (expr ~ ","?) ~ ")" ~ NEWLINE? }
+if_stmt = { "if" ~ expr ~ "then" ~ stmts? ~ "end." }
+while_stmt = { "while" ~ expr ~ scope }
+set_stmt = { "set" ~ identifier ~ "=" ~ expr ~ ";" }
+var_stmt = { "var" ~ identifier ~ ("=" ~ expr)? ~ ";" }
+program = { "program" ~ identifier ~ scope }
+call_stmt = { expr ~ "(" ~ arg* ~ ")" ~ ";" }
 
-stmt = { if_stmt | while_stmt | set_stmt | print_stmt | variable | program | line | NEWLINE }
+stmt = {
+    if_stmt | 
+    while_stmt | 
+    set_stmt |
+    var_stmt | 
+    program |
+    call_stmt
+}
 
-scope = { "begin" ~ stmt* ~ "end." ~ NEWLINE }
+stmts = { stmt* }
 
-file = { SOI ~ stmt* ~ EOI }
+scope = { "begin" ~ stmts? ~ "end." }
 
-// flow = {  }
+file = { SOI ~ stmts? ~ EOI }

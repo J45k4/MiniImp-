@@ -1,15 +1,20 @@
+program CALCULATOR begin
+var PI = 3;
+var ANSWER = PI;
+var X = 9;
 
-program CALCULATOR
-begin
-var PI = 3
-var ANSWER = PI
-var X = 9
-
-while true
-begin
+while true begin
 end.
 
-print 5
+print(5);
 end.
 
-line(10, 10, 20, 20, "red")
+line(10, 10, 20, 20, "red");
+
+
+var i = 10;
+var x = 5;
+
+print(x);
+
+set x = 15;

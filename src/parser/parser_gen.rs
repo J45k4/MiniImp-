@@ -7,27 +7,28 @@ pub enum Rule {
     string_literal,
     identifier,
     WHITESPACE,
+    COMMENT,
     plus,
     minus,
     multi,
     divide,
     operator,
-    linebreak,
     true_bool,
     false_bool,
     boolean,
     is_bool,
     not_bool,
     term,
+    arg,
     expr,
     if_stmt,
     while_stmt,
     set_stmt,
-    print_stmt,
-    variable,
+    var_stmt,
     program,
-    line,
+    call_stmt,
     stmt,
+    stmts,
     scope,
     file,
 }
@@ -46,7 +47,21 @@ impl ::pest::Parser<Rule> for MiniImp {
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
                     if state.atomicity() == ::pest::Atomicity::NonAtomic {
-                        state.repeat(|state| super::visible::WHITESPACE(state))
+                        state.sequence(|state| {
+                            state
+                                .repeat(|state| super::visible::WHITESPACE(state))
+                                .and_then(|state| {
+                                    state.repeat(|state| {
+                                        state.sequence(|state| {
+                                            super::visible::COMMENT(state).and_then(|state| {
+                                                state.repeat(|state| {
+                                                    super::visible::WHITESPACE(state)
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
+                        })
                     } else {
                         Ok(state)
                     }
@@ -117,24 +132,12 @@ impl ::pest::Parser<Rule> for MiniImp {
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
                     state.rule(Rule::identifier, |state| {
-                        state.sequence(|state| {
-                            self::ASCII_ALPHANUMERIC(state)
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| {
-                                    state.sequence(|state| {
-                                        state.optional(|state| {
-                                            self::ASCII_ALPHANUMERIC(state).and_then(|state| {
-                                                state.repeat(|state| {
-                                                    state.sequence(|state| {
-                                                        super::hidden::skip(state).and_then(
-                                                            |state| self::ASCII_ALPHANUMERIC(state),
-                                                        )
-                                                    })
-                                                })
-                                            })
-                                        })
-                                    })
+                        state.atomic(::pest::Atomicity::Atomic, |state| {
+                            state.sequence(|state| {
+                                self::ASCII_ALPHANUMERIC(state).and_then(|state| {
+                                    state.repeat(|state| self::ASCII_ALPHANUMERIC(state))
                                 })
+                            })
                         })
                     })
                 }
@@ -143,7 +146,43 @@ impl ::pest::Parser<Rule> for MiniImp {
                 pub fn WHITESPACE(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.atomic(::pest::Atomicity::Atomic, |state| state.match_string(" "))
+                    state.atomic(::pest::Atomicity::Atomic, |state| {
+                        state
+                            .match_string(" ")
+                            .or_else(|state| self::NEWLINE(state))
+                    })
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn COMMENT(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.atomic(::pest::Atomicity::Atomic, |state| {
+                        state
+                            .sequence(|state| {
+                                state
+                                    .match_string("/*")
+                                    .and_then(|state| {
+                                        state.repeat(|state| {
+                                            state.sequence(|state| {
+                                                state
+                                                    .lookahead(false, |state| {
+                                                        state.match_string("*/")
+                                                    })
+                                                    .and_then(|state| self::ANY(state))
+                                            })
+                                        })
+                                    })
+                                    .and_then(|state| state.match_string("*/"))
+                            })
+                            .or_else(|state| {
+                                state.sequence(|state| {
+                                    state
+                                        .match_string("//")
+                                        .and_then(|state| state.repeat(|state| self::ANY(state)))
+                                })
+                            })
+                    })
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
@@ -184,13 +223,6 @@ impl ::pest::Parser<Rule> for MiniImp {
                             .or_else(|state| self::multi(state))
                             .or_else(|state| self::divide(state))
                     })
-                }
-                #[inline]
-                #[allow(non_snake_case, unused_variables)]
-                pub fn linebreak(
-                    state: Box<::pest::ParserState<Rule>>,
-                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::linebreak, |state| self::NEWLINE(state))
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
@@ -260,6 +292,23 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
+                pub fn arg(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::arg, |state| {
+                        state.sequence(|state| {
+                            self::expr(state)
+                                .and_then(|state| super::hidden::skip(state))
+                                .and_then(|state| {
+                                    state.match_string(",").or_else(|state| {
+                                        state.lookahead(true, |state| state.match_string(")"))
+                                    })
+                                })
+                        })
+                    })
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
                 pub fn expr(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
@@ -296,7 +345,9 @@ impl ::pest::Parser<Rule> for MiniImp {
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| state.match_string("then"))
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::scope(state))
+                                .and_then(|state| state.optional(|state| self::stmts(state)))
+                                .and_then(|state| super::hidden::skip(state))
+                                .and_then(|state| state.match_string("end."))
                         })
                     })
                 }
@@ -311,8 +362,6 @@ impl ::pest::Parser<Rule> for MiniImp {
                                 .match_string("while")
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| self::expr(state))
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::NEWLINE(state))
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| self::scope(state))
                         })
@@ -333,31 +382,17 @@ impl ::pest::Parser<Rule> for MiniImp {
                                 .and_then(|state| state.match_string("="))
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| self::expr(state))
+                                .and_then(|state| super::hidden::skip(state))
+                                .and_then(|state| state.match_string(";"))
                         })
                     })
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn print_stmt(
+                pub fn var_stmt(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::print_stmt, |state| {
-                        state.sequence(|state| {
-                            state
-                                .match_string("print")
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::expr(state))
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| state.optional(|state| self::NEWLINE(state)))
-                        })
-                    })
-                }
-                #[inline]
-                #[allow(non_snake_case, unused_variables)]
-                pub fn variable(
-                    state: Box<::pest::ParserState<Rule>>,
-                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::variable, |state| {
+                    state.rule(Rule::var_stmt, |state| {
                         state.sequence(|state| {
                             state
                                 .match_string("var")
@@ -375,7 +410,7 @@ impl ::pest::Parser<Rule> for MiniImp {
                                     })
                                 })
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| state.optional(|state| self::NEWLINE(state)))
+                                .and_then(|state| state.match_string(";"))
                         })
                     })
                 }
@@ -391,31 +426,39 @@ impl ::pest::Parser<Rule> for MiniImp {
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| self::identifier(state))
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::NEWLINE(state))
-                                .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| self::scope(state))
                         })
                     })
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn line(
+                pub fn call_stmt(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::line, |state| {
+                    state.rule(Rule::call_stmt, |state| {
                         state.sequence(|state| {
-                            state
-                                .match_string("line")
+                            self::expr(state)
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| state.match_string("("))
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::expr(state))
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| state.optional(|state| state.match_string(",")))
+                                .and_then(|state| {
+                                    state.sequence(|state| {
+                                        state.optional(|state| {
+                                            self::arg(state).and_then(|state| {
+                                                state.repeat(|state| {
+                                                    state.sequence(|state| {
+                                                        super::hidden::skip(state)
+                                                            .and_then(|state| self::arg(state))
+                                                    })
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| state.match_string(")"))
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| state.optional(|state| self::NEWLINE(state)))
+                                .and_then(|state| state.match_string(";"))
                         })
                     })
                 }
@@ -428,11 +471,29 @@ impl ::pest::Parser<Rule> for MiniImp {
                         self::if_stmt(state)
                             .or_else(|state| self::while_stmt(state))
                             .or_else(|state| self::set_stmt(state))
-                            .or_else(|state| self::print_stmt(state))
-                            .or_else(|state| self::variable(state))
+                            .or_else(|state| self::var_stmt(state))
                             .or_else(|state| self::program(state))
-                            .or_else(|state| self::line(state))
-                            .or_else(|state| self::NEWLINE(state))
+                            .or_else(|state| self::call_stmt(state))
+                    })
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn stmts(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::stmts, |state| {
+                        state.sequence(|state| {
+                            state.optional(|state| {
+                                self::stmt(state).and_then(|state| {
+                                    state.repeat(|state| {
+                                        state.sequence(|state| {
+                                            super::hidden::skip(state)
+                                                .and_then(|state| self::stmt(state))
+                                        })
+                                    })
+                                })
+                            })
+                        })
                     })
                 }
                 #[inline]
@@ -445,24 +506,9 @@ impl ::pest::Parser<Rule> for MiniImp {
                             state
                                 .match_string("begin")
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| {
-                                    state.sequence(|state| {
-                                        state.optional(|state| {
-                                            self::stmt(state).and_then(|state| {
-                                                state.repeat(|state| {
-                                                    state.sequence(|state| {
-                                                        super::hidden::skip(state)
-                                                            .and_then(|state| self::stmt(state))
-                                                    })
-                                                })
-                                            })
-                                        })
-                                    })
-                                })
+                                .and_then(|state| state.optional(|state| self::stmts(state)))
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| state.match_string("end."))
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::NEWLINE(state))
                         })
                     })
                 }
@@ -475,24 +521,18 @@ impl ::pest::Parser<Rule> for MiniImp {
                         state.sequence(|state| {
                             self::SOI(state)
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| {
-                                    state.sequence(|state| {
-                                        state.optional(|state| {
-                                            self::stmt(state).and_then(|state| {
-                                                state.repeat(|state| {
-                                                    state.sequence(|state| {
-                                                        super::hidden::skip(state)
-                                                            .and_then(|state| self::stmt(state))
-                                                    })
-                                                })
-                                            })
-                                        })
-                                    })
-                                })
+                                .and_then(|state| state.optional(|state| self::stmts(state)))
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| self::EOI(state))
                         })
                     })
+                }
+                #[inline]
+                #[allow(dead_code, non_snake_case, unused_variables)]
+                pub fn ANY(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.skip(1)
                 }
                 #[inline]
                 #[allow(dead_code, non_snake_case, unused_variables)]
@@ -543,27 +583,28 @@ impl ::pest::Parser<Rule> for MiniImp {
             Rule::string_literal => rules::string_literal(state),
             Rule::identifier => rules::identifier(state),
             Rule::WHITESPACE => rules::WHITESPACE(state),
+            Rule::COMMENT => rules::COMMENT(state),
             Rule::plus => rules::plus(state),
             Rule::minus => rules::minus(state),
             Rule::multi => rules::multi(state),
             Rule::divide => rules::divide(state),
             Rule::operator => rules::operator(state),
-            Rule::linebreak => rules::linebreak(state),
             Rule::true_bool => rules::true_bool(state),
             Rule::false_bool => rules::false_bool(state),
             Rule::boolean => rules::boolean(state),
             Rule::is_bool => rules::is_bool(state),
             Rule::not_bool => rules::not_bool(state),
             Rule::term => rules::term(state),
+            Rule::arg => rules::arg(state),
             Rule::expr => rules::expr(state),
             Rule::if_stmt => rules::if_stmt(state),
             Rule::while_stmt => rules::while_stmt(state),
             Rule::set_stmt => rules::set_stmt(state),
-            Rule::print_stmt => rules::print_stmt(state),
-            Rule::variable => rules::variable(state),
+            Rule::var_stmt => rules::var_stmt(state),
             Rule::program => rules::program(state),
-            Rule::line => rules::line(state),
+            Rule::call_stmt => rules::call_stmt(state),
             Rule::stmt => rules::stmt(state),
+            Rule::stmts => rules::stmts(state),
             Rule::scope => rules::scope(state),
             Rule::file => rules::file(state),
             Rule::EOI => rules::EOI(state),
