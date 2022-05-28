@@ -1,5 +1,5 @@
 
-number = { (ASCII_DIGIT)+ }
+number = @{ (ASCII_DIGIT)+ }
 string_literal = { "\"" ~ ASCII_ALPHANUMERIC* ~ "\"" }
 identifier = @{ ASCII_ALPHANUMERIC+ }
 
@@ -11,21 +11,28 @@ minus = { "-" }
 multi = { "*" }
 divide = { "/" }
 
-operator = { plus | minus | multi | divide }
-
 true_bool = { "true" }
 false_bool = { "false" }
 
 boolean = { true_bool | false_bool }
 
-is_bool = { "is" ~ expr }
-not_bool = { "not" ~ expr }
+is = { "is" }
+not = { "not" }
 
-term = { expr ~ operator ~ expr }
+truth = { true_bool | false_bool | not ~ truth | is ~ identifier ~ expr }
+
+factor = { 
+    "(" ~ expr ~ ")" | 
+    number | 
+    identifier | 
+    string_literal | 
+    boolean |
+    truth
+}
+mul = { factor ~ ((multi | divide) ~ factor)* }
+expr = { mul ~ ((plus | minus) ~ mul)* }
 
 arg = { expr ~ ( "," | &")" ) }
-
-expr = { number | identifier | boolean | is_bool | not_bool | "(" ~ expr ~ ")" | string_literal }
 
 if_stmt = { "if" ~ expr ~ "then" ~ stmts? ~ "end." }
 while_stmt = { "while" ~ expr ~ scope }

@@ -1,5 +1,6 @@
 use pest::iterators::{Pairs, Pair};
 
+use crate::bytecode::Ins;
 use crate::parser::Rule;
 
 fn compile_boolean(ast: Pair<Rule>) {
@@ -14,9 +15,9 @@ fn compile_expr(ast: Pair<Rule>) {
     for t in inner {
         match t.as_rule() {
             Rule::boolean => todo!(),
-            Rule::is_bool => todo!(),
-            Rule::not_bool => todo!(),
-            Rule::term => todo!(),
+            // Rule::is_bool => todo!(),
+            // Rule::not_bool => todo!(),
+            // Rule::term => todo!(),
             Rule::number => todo!(),
             Rule::string_literal => todo!(),
             Rule::true_bool => todo!(),
@@ -102,7 +103,7 @@ fn compile_stmts(ast: Pair<Rule>) {
     }
 }
 
-fn compile_file(ast: Pair<Rule>) {
+fn compile_file(ins: &mut Vec<Ins>, ast: Pair<Rule>) {
     let inner = ast.into_inner();
 
     for t in inner {
@@ -113,7 +114,7 @@ fn compile_file(ast: Pair<Rule>) {
             Rule::minus => todo!(),
             Rule::multi => todo!(),
             Rule::divide => todo!(),
-            Rule::operator => todo!(),
+            // Rule::operator => todo!(),
             Rule::arg => todo!(),
             Rule::expr => todo!(),
             Rule::program => todo!(),
@@ -126,10 +127,12 @@ fn compile_file(ast: Pair<Rule>) {
 }
 
 pub fn compile(ast: Pairs<Rule>) {
+    let mut ins = vec![];
+
     for t in ast {
         match t.as_rule() {
             Rule::file => {
-                compile_file(t);
+                compile_file(&mut ins, t);
             },
             _ => {
                 panic!("Not supported")

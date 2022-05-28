@@ -12,15 +12,16 @@ pub enum Rule {
     minus,
     multi,
     divide,
-    operator,
     true_bool,
     false_bool,
     boolean,
-    is_bool,
-    not_bool,
-    term,
-    arg,
+    is,
+    not,
+    truth,
+    factor,
+    mul,
     expr,
+    arg,
     if_stmt,
     while_stmt,
     set_stmt,
@@ -75,24 +76,12 @@ impl ::pest::Parser<Rule> for MiniImp {
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
                     state.rule(Rule::number, |state| {
-                        state.sequence(|state| {
-                            self::ASCII_DIGIT(state)
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| {
-                                    state.sequence(|state| {
-                                        state.optional(|state| {
-                                            self::ASCII_DIGIT(state).and_then(|state| {
-                                                state.repeat(|state| {
-                                                    state.sequence(|state| {
-                                                        super::hidden::skip(state).and_then(
-                                                            |state| self::ASCII_DIGIT(state),
-                                                        )
-                                                    })
-                                                })
-                                            })
-                                        })
-                                    })
+                        state.atomic(::pest::Atomicity::Atomic, |state| {
+                            state.sequence(|state| {
+                                self::ASCII_DIGIT(state).and_then(|state| {
+                                    state.repeat(|state| self::ASCII_DIGIT(state))
                                 })
+                            })
                         })
                     })
                 }
@@ -214,18 +203,6 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn operator(
-                    state: Box<::pest::ParserState<Rule>>,
-                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::operator, |state| {
-                        self::plus(state)
-                            .or_else(|state| self::minus(state))
-                            .or_else(|state| self::multi(state))
-                            .or_else(|state| self::divide(state))
-                    })
-                }
-                #[inline]
-                #[allow(non_snake_case, unused_variables)]
                 pub fn true_bool(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
@@ -249,44 +226,165 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn is_bool(
+                pub fn is(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::is_bool, |state| {
+                    state.rule(Rule::is, |state| state.match_string("is"))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn not(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::not, |state| state.match_string("not"))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn truth(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::truth, |state| {
+                        self::true_bool(state)
+                            .or_else(|state| self::false_bool(state))
+                            .or_else(|state| {
+                                state.sequence(|state| {
+                                    self::not(state)
+                                        .and_then(|state| super::hidden::skip(state))
+                                        .and_then(|state| self::truth(state))
+                                })
+                            })
+                            .or_else(|state| {
+                                state.sequence(|state| {
+                                    self::is(state)
+                                        .and_then(|state| super::hidden::skip(state))
+                                        .and_then(|state| self::identifier(state))
+                                        .and_then(|state| super::hidden::skip(state))
+                                        .and_then(|state| self::expr(state))
+                                })
+                            })
+                    })
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn factor(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::factor, |state| {
+                        state
+                            .sequence(|state| {
+                                state
+                                    .match_string("(")
+                                    .and_then(|state| super::hidden::skip(state))
+                                    .and_then(|state| self::expr(state))
+                                    .and_then(|state| super::hidden::skip(state))
+                                    .and_then(|state| state.match_string(")"))
+                            })
+                            .or_else(|state| self::number(state))
+                            .or_else(|state| self::identifier(state))
+                            .or_else(|state| self::string_literal(state))
+                            .or_else(|state| self::boolean(state))
+                            .or_else(|state| self::truth(state))
+                    })
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn mul(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::mul, |state| {
                         state.sequence(|state| {
-                            state
-                                .match_string("is")
+                            self::factor(state)
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::expr(state))
+                                .and_then(|state| {
+                                    state.sequence(|state| {
+                                        state.optional(|state| {
+                                            state
+                                                .sequence(|state| {
+                                                    self::multi(state)
+                                                        .or_else(|state| self::divide(state))
+                                                        .and_then(|state| {
+                                                            super::hidden::skip(state)
+                                                        })
+                                                        .and_then(|state| self::factor(state))
+                                                })
+                                                .and_then(|state| {
+                                                    state.repeat(|state| {
+                                                        state.sequence(|state| {
+                                                            super::hidden::skip(state).and_then(
+                                                                |state| {
+                                                                    state.sequence(|state| {
+                                                                        self::multi(state)
+                                                                            .or_else(|state| {
+                                                                                self::divide(state)
+                                                                            })
+                                                                            .and_then(|state| {
+                                                                                super::hidden::skip(
+                                                                                    state,
+                                                                                )
+                                                                            })
+                                                                            .and_then(|state| {
+                                                                                self::factor(state)
+                                                                            })
+                                                                    })
+                                                                },
+                                                            )
+                                                        })
+                                                    })
+                                                })
+                                        })
+                                    })
+                                })
                         })
                     })
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn not_bool(
+                pub fn expr(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::not_bool, |state| {
+                    state.rule(Rule::expr, |state| {
                         state.sequence(|state| {
-                            state
-                                .match_string("not")
+                            self::mul(state)
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::expr(state))
-                        })
-                    })
-                }
-                #[inline]
-                #[allow(non_snake_case, unused_variables)]
-                pub fn term(
-                    state: Box<::pest::ParserState<Rule>>,
-                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::term, |state| {
-                        state.sequence(|state| {
-                            self::expr(state)
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::operator(state))
-                                .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| self::expr(state))
+                                .and_then(|state| {
+                                    state.sequence(|state| {
+                                        state.optional(|state| {
+                                            state
+                                                .sequence(|state| {
+                                                    self::plus(state)
+                                                        .or_else(|state| self::minus(state))
+                                                        .and_then(|state| {
+                                                            super::hidden::skip(state)
+                                                        })
+                                                        .and_then(|state| self::mul(state))
+                                                })
+                                                .and_then(|state| {
+                                                    state.repeat(|state| {
+                                                        state.sequence(|state| {
+                                                            super::hidden::skip(state).and_then(
+                                                                |state| {
+                                                                    state.sequence(|state| {
+                                                                        self::plus(state)
+                                                                            .or_else(|state| {
+                                                                                self::minus(state)
+                                                                            })
+                                                                            .and_then(|state| {
+                                                                                super::hidden::skip(
+                                                                                    state,
+                                                                                )
+                                                                            })
+                                                                            .and_then(|state| {
+                                                                                self::mul(state)
+                                                                            })
+                                                                    })
+                                                                },
+                                                            )
+                                                        })
+                                                    })
+                                                })
+                                        })
+                                    })
+                                })
                         })
                     })
                 }
@@ -305,30 +403,6 @@ impl ::pest::Parser<Rule> for MiniImp {
                                     })
                                 })
                         })
-                    })
-                }
-                #[inline]
-                #[allow(non_snake_case, unused_variables)]
-                pub fn expr(
-                    state: Box<::pest::ParserState<Rule>>,
-                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::expr, |state| {
-                        self::number(state)
-                            .or_else(|state| self::identifier(state))
-                            .or_else(|state| self::boolean(state))
-                            .or_else(|state| self::is_bool(state))
-                            .or_else(|state| self::not_bool(state))
-                            .or_else(|state| {
-                                state.sequence(|state| {
-                                    state
-                                        .match_string("(")
-                                        .and_then(|state| super::hidden::skip(state))
-                                        .and_then(|state| self::expr(state))
-                                        .and_then(|state| super::hidden::skip(state))
-                                        .and_then(|state| state.match_string(")"))
-                                })
-                            })
-                            .or_else(|state| self::string_literal(state))
                     })
                 }
                 #[inline]
@@ -588,15 +662,16 @@ impl ::pest::Parser<Rule> for MiniImp {
             Rule::minus => rules::minus(state),
             Rule::multi => rules::multi(state),
             Rule::divide => rules::divide(state),
-            Rule::operator => rules::operator(state),
             Rule::true_bool => rules::true_bool(state),
             Rule::false_bool => rules::false_bool(state),
             Rule::boolean => rules::boolean(state),
-            Rule::is_bool => rules::is_bool(state),
-            Rule::not_bool => rules::not_bool(state),
-            Rule::term => rules::term(state),
-            Rule::arg => rules::arg(state),
+            Rule::is => rules::is(state),
+            Rule::not => rules::not(state),
+            Rule::truth => rules::truth(state),
+            Rule::factor => rules::factor(state),
+            Rule::mul => rules::mul(state),
             Rule::expr => rules::expr(state),
+            Rule::arg => rules::arg(state),
             Rule::if_stmt => rules::if_stmt(state),
             Rule::while_stmt => rules::while_stmt(state),
             Rule::set_stmt => rules::set_stmt(state),

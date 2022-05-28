@@ -53,4 +53,9 @@ end.
     fn test_set() {
         parse_text(r#"set x = 25;"#).unwrap();
     }
+
+    #[test]
+    fn test_parse_math() {
+        parse_text(r#"var x = 2 * 5 + 2 / (2 * 2);"#).unwrap();
+    }
 }
