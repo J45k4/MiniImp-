@@ -19,7 +19,7 @@ pub enum Rule {
     not,
     truth,
     factor,
-    mul,
+    term,
     expr,
     arg,
     if_stmt,
@@ -288,10 +288,10 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn mul(
+                pub fn term(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::mul, |state| {
+                    state.rule(Rule::term, |state| {
                         state.sequence(|state| {
                             self::factor(state)
                                 .and_then(|state| super::hidden::skip(state))
@@ -344,7 +344,7 @@ impl ::pest::Parser<Rule> for MiniImp {
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
                     state.rule(Rule::expr, |state| {
                         state.sequence(|state| {
-                            self::mul(state)
+                            self::term(state)
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| {
                                     state.sequence(|state| {
@@ -356,7 +356,7 @@ impl ::pest::Parser<Rule> for MiniImp {
                                                         .and_then(|state| {
                                                             super::hidden::skip(state)
                                                         })
-                                                        .and_then(|state| self::mul(state))
+                                                        .and_then(|state| self::term(state))
                                                 })
                                                 .and_then(|state| {
                                                     state.repeat(|state| {
@@ -374,7 +374,7 @@ impl ::pest::Parser<Rule> for MiniImp {
                                                                                 )
                                                                             })
                                                                             .and_then(|state| {
-                                                                                self::mul(state)
+                                                                                self::term(state)
                                                                             })
                                                                     })
                                                                 },
@@ -669,7 +669,7 @@ impl ::pest::Parser<Rule> for MiniImp {
             Rule::not => rules::not(state),
             Rule::truth => rules::truth(state),
             Rule::factor => rules::factor(state),
-            Rule::mul => rules::mul(state),
+            Rule::term => rules::term(state),
             Rule::expr => rules::expr(state),
             Rule::arg => rules::arg(state),
             Rule::if_stmt => rules::if_stmt(state),

@@ -29,8 +29,8 @@ factor = {
     boolean |
     truth
 }
-mul = { factor ~ ((multi | divide) ~ factor)* }
-expr = { mul ~ ((plus | minus) ~ mul)* }
+term = { factor ~ ((multi | divide) ~ factor)* }
+expr = { term ~ ((plus | minus) ~ term)* }
 
 arg = { expr ~ ( "," | &")" ) }
 
