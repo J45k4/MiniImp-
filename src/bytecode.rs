@@ -1,14 +1,24 @@
 
-
+#[derive(Debug)]
 pub enum ByteCode {
     Nope,
     Load,
-    LoadCost,
+    LoadConst,
+    LoadGlobal,
+    LoadFast,
+    StoreGlobal,
+    StoreFast,
+    BinMul,
+    BinAdd,
+    BinMinus,
+    BinDivide,
     Store,
     JumpIfTrue,
-    JumpIfFalse
+    JumpIfFalse,
+    ReturnValue
 }
 
+#[derive(Debug)]
 pub struct Ins {
     pub code: ByteCode,
     pub arg: u32,

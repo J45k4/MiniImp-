@@ -19,14 +19,18 @@ boolean = { true_bool | false_bool }
 is = { "is" }
 not = { "not" }
 
-truth = { true_bool | false_bool | not ~ truth | is ~ identifier ~ expr }
+truth = { 
+    true_bool | 
+    false_bool | 
+    not ~ truth | 
+    is ~ identifier ~ expr 
+}
 
 factor = { 
     "(" ~ expr ~ ")" | 
     number | 
     identifier | 
     string_literal | 
-    boolean |
     truth
 }
 term = { factor ~ ((multi | divide) ~ factor)* }

@@ -282,7 +282,6 @@ impl ::pest::Parser<Rule> for MiniImp {
                             .or_else(|state| self::number(state))
                             .or_else(|state| self::identifier(state))
                             .or_else(|state| self::string_literal(state))
-                            .or_else(|state| self::boolean(state))
                             .or_else(|state| self::truth(state))
                     })
                 }
