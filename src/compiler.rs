@@ -154,9 +154,19 @@ fn compile_call_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 
     compile_expr(vm, inner.next().unwrap());
     
+    let mut number_of_args = 0;
+
     for t in inner {
         compile_arg(vm, t);
+        number_of_args += 1;
     }
+
+    let i = Ins{
+        code: ByteCode::Call,
+        arg: number_of_args
+    };
+
+    vm.add_instruction(i);
 }
 
 fn compile_stmt(vm: &mut Vm, ast: Pair<Rule>) {

@@ -134,6 +134,7 @@ impl Vm {
                 crate::bytecode::ByteCode::JumpIfTrue => todo!(),
                 crate::bytecode::ByteCode::JumpIfFalse => todo!(),
                 crate::bytecode::ByteCode::ReturnValue => todo!(),
+                crate::bytecode::ByteCode::Call => todo!(),
             }
         }
     }

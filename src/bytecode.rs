@@ -11,7 +11,8 @@ pub enum ByteCode {
     BinDivide,
     JumpIfTrue,
     JumpIfFalse,
-    ReturnValue
+    ReturnValue,
+    Call
 }
 
 #[derive(Debug)]
