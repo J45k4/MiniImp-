@@ -18,12 +18,12 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
     }
 
     let i = if let Rule::identifier = rule {
-        let i = Ins{
-            code: ByteCode::Load,
-            arg: vm.get_identifier_id(inner.as_str())
-        };
+        let id = vm.store_identifier(inner.as_str());
 
-        return
+        Ins{
+            code: ByteCode::Load,
+            arg: id 
+        }
     } else {
         let const_id = match rule {
             Rule::number => {
@@ -109,11 +109,11 @@ fn compile_var_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 
     let s = inner.next().unwrap();
 
-    println!("{}", s.as_str());
+    let arg = vm.store_identifier(s.as_str());
+
+    println!("{} {}", s.as_str(), arg);
 
     compile_expr(vm, inner.next().unwrap());
-
-    let arg = vm.get_identifier_id(s.as_str());
 
     let i = Ins{
         code: ByteCode::Store,

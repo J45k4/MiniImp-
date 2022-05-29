@@ -1,4 +1,4 @@
-use std::collections::{HashMap};
+use std::{collections::{HashMap}};
 
 use crate::bytecode::Ins;
 
@@ -6,11 +6,9 @@ use crate::bytecode::Ins;
 pub enum Value {
     Number(f64),
     String(String),
-    Boolean(bool)
-}
-
-pub struct Scope {
-    variables: HashMap<u32, Value>
+    Boolean(bool),
+    None,
+    Empty
 }
 
 #[derive(Debug)]
@@ -19,7 +17,7 @@ pub struct Vm {
     stack: Vec<Value>,
     instuctions: Vec<Ins>,
     constants: Vec<Value>,
-    globals: Vec<Value>,
+    values: Vec<Value>,
     identifier_map: HashMap<String, u32>,
 }
 
@@ -30,7 +28,7 @@ impl Vm {
             stack: vec![],
             instuctions: vec![],
             constants: vec![],
-            globals: vec![],
+            values: vec![],
             identifier_map: HashMap::new(),
         }
     }
@@ -47,19 +45,38 @@ impl Vm {
         next_id
     }
 
-    pub fn store_global(&mut self, key: u32, v: Value) {
-        self.globals.push(v);
-
-        u32::try_from(self.globals.len() - 1).unwrap();
+    pub fn store(&mut self, key: u32, v: Value) {
+        self.values[usize::try_from(key).unwrap()] = v;
     }
 
-    pub fn get_identifier_id(&mut self, name: &str) -> u32 {
+    pub fn store_new(&mut self, v: Value) -> u32 {
+        let new_id = self.get_new_id();
+
+        self.values[new_id] = v;
+
+        u32::try_from(new_id).unwrap()
+    }
+
+
+    fn get_new_id(&mut self) -> usize {
+        for i in 0..self.values.len() {
+            if let Value::None = self.values[i] {
+                return i;
+            }
+        }
+
+        self.values.push(Value::Empty);
+
+        self.values.len() - 1
+    }
+
+    pub fn store_identifier(&mut self, name: &str) -> u32 {
         match self.identifier_map.get(name) {
             Some(v) => {
                 v.to_owned()
             },
             None => {
-                let next_id = u32::try_from(self.globals.len()).unwrap();
+                let next_id = u32::try_from(self.get_new_id()).unwrap();
 
                 self.identifier_map.insert(name.to_string(), next_id);
 
@@ -71,7 +88,7 @@ impl Vm {
     pub fn load_global(&self, id: u32) -> Value {
         let index = usize::try_from(id).unwrap();
 
-        self.globals[index].clone()
+        self.values[index].clone()
     }
 
     pub fn load_const(&self, id: u32) -> Value {
@@ -103,7 +120,9 @@ impl Vm {
                 crate::bytecode::ByteCode::Store => {
                     let v = self.stack.pop().unwrap();
 
-                    self.store_global(ins.arg, v);
+                    println!("storing value {:?}", v);
+
+                    self.store(ins.arg, v);
                 },
                 crate::bytecode::ByteCode::Load => {
                     let v = self.load_global(ins.arg);
@@ -134,7 +153,9 @@ impl Vm {
                 crate::bytecode::ByteCode::JumpIfTrue => todo!(),
                 crate::bytecode::ByteCode::JumpIfFalse => todo!(),
                 crate::bytecode::ByteCode::ReturnValue => todo!(),
-                crate::bytecode::ByteCode::Call => todo!(),
+                crate::bytecode::ByteCode::Call => {
+                    println!("{:?}", self);
+                },
             }
         }
     }
