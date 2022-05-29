@@ -2,7 +2,7 @@ use std::collections::{HashMap};
 
 use crate::bytecode::Ins;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
     String(String),
@@ -15,8 +15,8 @@ pub struct Scope {
 
 #[derive(Debug)]
 pub struct Vm {
-    pc: u32,
-    stack: Vec<u32>,
+    pc: usize,
+    stack: Vec<Value>,
     instuctions: Vec<Ins>,
     constants: Vec<Value>,
     globals: Vec<Value>,
@@ -68,11 +68,73 @@ impl Vm {
         }
     }
 
+    pub fn load_global(&self, id: u32) -> Value {
+        let index = usize::try_from(id).unwrap();
+
+        self.globals[index].clone()
+    }
+
+    pub fn load_const(&self, id: u32) -> Value {
+        let index = usize::try_from(id).unwrap();
+
+        self.constants[index].clone()
+    }
+
     pub fn add_instruction(&mut self, ins: Ins) {
         self.instuctions.push(ins);
     }
 
     pub fn run(&mut self) {
+        let len = self.instuctions.len();
 
+        while self.pc <  len {
+            let pc = self.pc;
+            self.pc += 1;
+
+            let ins = &self.instuctions[pc];
+
+            match ins.code {
+                crate::bytecode::ByteCode::Nope => todo!(),
+                crate::bytecode::ByteCode::LoadConst => {
+                    let v = self.load_const(ins.arg);
+
+                    self.stack.push(v);
+                },
+                crate::bytecode::ByteCode::Store => {
+                    let v = self.stack.pop().unwrap();
+
+                    self.store_global(ins.arg, v);
+                },
+                crate::bytecode::ByteCode::Load => {
+                    let v = self.load_global(ins.arg);
+
+                    self.stack.push(v);
+                },
+                crate::bytecode::ByteCode::BinMul => todo!(),
+                crate::bytecode::ByteCode::BinAdd => {
+                    let tos = self.stack.pop().unwrap();
+                    let tos1 = self.stack.pop().unwrap();
+
+                    let tos_v = match tos {
+                        Value::Number(n) => n,
+                        _ => unimplemented!()
+                    };
+
+                    let tos1_v = match tos1 {
+                        Value::Number(n) => n,
+                        _ => unimplemented!()
+                    };
+
+                    let result = tos_v + tos1_v;
+
+                    self.stack.push(Value::Number(result));
+                },
+                crate::bytecode::ByteCode::BinMinus => todo!(),
+                crate::bytecode::ByteCode::BinDivide => todo!(),
+                crate::bytecode::ByteCode::JumpIfTrue => todo!(),
+                crate::bytecode::ByteCode::JumpIfFalse => todo!(),
+                crate::bytecode::ByteCode::ReturnValue => todo!(),
+            }
+        }
     }
 }

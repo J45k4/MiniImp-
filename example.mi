@@ -1,4 +1,4 @@
-program CALCULATOR begin
+/*program CALCULATOR begin
 var PI = 3;
 var ANSWER = PI;
 var X = 9;
@@ -17,4 +17,6 @@ var x = 5;
 
 print(x);
 
-set x = 15;
+set x = 15;*/
+
+var x = 5 + 10;

@@ -19,7 +19,7 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
 
     let i = if let Rule::identifier = rule {
         let i = Ins{
-            code: ByteCode::LoadGlobal,
+            code: ByteCode::Load,
             arg: vm.get_identifier_id(inner.as_str())
         };
 
@@ -116,7 +116,7 @@ fn compile_var_stmt(vm: &mut Vm, ast: Pair<Rule>) {
     let arg = vm.get_identifier_id(s.as_str());
 
     let i = Ins{
-        code: ByteCode::StoreGlobal,
+        code: ByteCode::Store,
         arg: arg
     };
 

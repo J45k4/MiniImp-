@@ -3,16 +3,12 @@
 pub enum ByteCode {
     Nope,
     Load,
+    Store,
     LoadConst,
-    LoadGlobal,
-    LoadFast,
-    StoreGlobal,
-    StoreFast,
     BinMul,
     BinAdd,
     BinMinus,
     BinDivide,
-    Store,
     JumpIfTrue,
     JumpIfFalse,
     ReturnValue
