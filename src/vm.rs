@@ -7,6 +7,7 @@ pub enum Value {
     Number(f64),
     String(String),
     Boolean(bool),
+    Print,
     None,
     Empty
 }
@@ -16,7 +17,6 @@ pub struct Vm {
     pc: usize,
     stack: Vec<Value>,
     instuctions: Vec<Ins>,
-    constants: Vec<Value>,
     values: Vec<Value>,
     identifier_map: HashMap<String, u32>,
 }
@@ -27,7 +27,6 @@ impl Vm {
             pc: 0,
             stack: vec![],
             instuctions: vec![],
-            constants: vec![],
             values: vec![],
             identifier_map: HashMap::new(),
         }
@@ -37,37 +36,14 @@ impl Vm {
         &self.instuctions
     }
 
-    pub fn store_const(&mut self, v: Value) -> u32 {
-        let next_id = u32::try_from(self.constants.len()).unwrap();
-
-        self.constants.push(v);
-
-        next_id
-    }
-
     pub fn store(&mut self, key: u32, v: Value) {
         self.values[usize::try_from(key).unwrap()] = v;
     }
 
     pub fn store_new(&mut self, v: Value) -> u32 {
-        let new_id = self.get_new_id();
+        self.values.push(v);
 
-        self.values[new_id] = v;
-
-        u32::try_from(new_id).unwrap()
-    }
-
-
-    fn get_new_id(&mut self) -> usize {
-        for i in 0..self.values.len() {
-            if let Value::None = self.values[i] {
-                return i;
-            }
-        }
-
-        self.values.push(Value::Empty);
-
-        self.values.len() - 1
+        u32::try_from(self.values.len() - 1).unwrap()
     }
 
     pub fn store_identifier(&mut self, name: &str) -> u32 {
@@ -76,7 +52,14 @@ impl Vm {
                 v.to_owned()
             },
             None => {
-                let next_id = u32::try_from(self.get_new_id()).unwrap();
+                let val = match name {
+                    "print" => Value::Print,
+                    _ => Value::Empty
+                };
+
+                self.values.push(val);
+
+                let next_id = u32::try_from(self.values.len() - 1).unwrap();
 
                 self.identifier_map.insert(name.to_string(), next_id);
 
@@ -85,16 +68,10 @@ impl Vm {
         }
     }
 
-    pub fn load_global(&self, id: u32) -> Value {
+    pub fn load(&self, id: u32) -> Value {
         let index = usize::try_from(id).unwrap();
 
         self.values[index].clone()
-    }
-
-    pub fn load_const(&self, id: u32) -> Value {
-        let index = usize::try_from(id).unwrap();
-
-        self.constants[index].clone()
     }
 
     pub fn add_instruction(&mut self, ins: Ins) {
@@ -113,7 +90,7 @@ impl Vm {
             match ins.code {
                 crate::bytecode::ByteCode::Nope => todo!(),
                 crate::bytecode::ByteCode::LoadConst => {
-                    let v = self.load_const(ins.arg);
+                    let v = self.load(ins.arg);
 
                     self.stack.push(v);
                 },
@@ -125,7 +102,7 @@ impl Vm {
                     self.store(ins.arg, v);
                 },
                 crate::bytecode::ByteCode::Load => {
-                    let v = self.load_global(ins.arg);
+                    let v = self.load(ins.arg);
 
                     self.stack.push(v);
                 },
@@ -154,7 +131,26 @@ impl Vm {
                 crate::bytecode::ByteCode::JumpIfFalse => todo!(),
                 crate::bytecode::ByteCode::ReturnValue => todo!(),
                 crate::bytecode::ByteCode::Call => {
-                    println!("{:?}", self);
+                    //println!("{:?}", self);
+                    ins.arg;
+
+                    let mut args = vec![];
+
+                    for i in 0..ins.arg {
+                        let v = self.stack.pop().unwrap();
+                        args.push(v);
+                    }
+
+                    println!("calling with args {:?}", args);
+
+                    let v = self.stack.pop().unwrap();
+
+                    match v {
+                        Value::Print => {
+                            println!("{:?}", args);
+                        },
+                        _ => unimplemented!()
+                    }
                 },
             }
         }

@@ -28,15 +28,15 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
         let const_id = match rule {
             Rule::number => {
                 let num = inner.as_str().parse().unwrap();
-                vm.store_const(crate::vm::Value::Number(num))
+                vm.store_new(crate::vm::Value::Number(num))
             },
             Rule::string_literal => {
                 let str = inner.as_str();
-                vm.store_const(Value::String(str.to_string()))
+                vm.store_new(Value::String(str.to_string()))
             },
             Rule::truth => {
                 let b = inner.as_str().parse().unwrap();
-                vm.store_const(Value::Boolean(b))
+                vm.store_new(Value::Boolean(b))
             },
             _ => unreachable!()
         };
