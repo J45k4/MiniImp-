@@ -1,8 +1,8 @@
-/*var x = 2;
+var x = 2;
 
 if x + 13 == 15 then
     print(x);
-end.*/
+end.*
 
 var i = 0;
 
