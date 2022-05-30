@@ -1,6 +1,6 @@
 use pest::iterators::{Pairs, Pair};
 
-use crate::bytecode::{Ins, ByteCode, LOGICAL_AND, EQUAL_TO_OP, LOGICAL_OR};
+use crate::bytecode::{Ins, ByteCode, LOGICAL_AND, EQUAL_TO_OP, LOGICAL_OR, SMALLER_THAN_OP, GREATER_THAN_OP, GREATER_THAN_EQUAL_TO_OP, SMALLER_THAN_EQUAL_TO_OP, NOT_EQUAL_TO_OP};
 use crate::parser::Rule;
 use crate::vm::{Vm, Value};
 
@@ -68,8 +68,6 @@ fn compile_term(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
-    println!("compiling expressions");
-
     let mut inner = ast.into_inner();
 
     loop {
@@ -77,8 +75,6 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
             Some(n) => n,
             None => break
         };
-
-        println!("next is: {:?}", next);
 
         let next_rule = next.as_rule();
 
@@ -101,13 +97,23 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
             }
             Rule::logical_and | 
             Rule::logical_or |
-            Rule::logical_eq => {
+            Rule::logical_eq |
+            Rule::logical_smaller |
+            Rule::logical_bigger |
+            Rule::logical_smaller_eq |
+            Rule::logical_bigger_eq |
+            Rule::logical_not_eq => {
                 compile_expr(vm, inner.next().unwrap());
 
                 let a = match next_rule {
                     Rule::logical_and => LOGICAL_AND,
                     Rule::logical_or => LOGICAL_OR,
                     Rule::logical_eq => EQUAL_TO_OP,
+                    Rule::logical_smaller => SMALLER_THAN_OP,
+                    Rule::logical_bigger => GREATER_THAN_OP,
+                    Rule::logical_smaller_eq => SMALLER_THAN_EQUAL_TO_OP,
+                    Rule::logical_bigger_eq => GREATER_THAN_EQUAL_TO_OP,
+                    Rule::logical_not_eq => NOT_EQUAL_TO_OP,
                     _ => unimplemented!()
                 };
 
@@ -126,44 +132,24 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
             },
             _ => {}
         }
-
-        // match next_rule {
-        //     Rule::plus | Rule::minus => {
-
-        //     },
-        //     Rule::logical_and | 
-        //     Rule::logical_or |
-        //     Rule::logical_eq => {
-        //         compile_expr(vm, next);
-
-        //         let a = match next_rule {
-        //             Rule::logical_and => LOGICAL_AND,
-        //             Rule::logical_or => LOGICAL_OR,
-        //             Rule::logical_eq => EQUAL_TO_OP,
-        //             _ => unimplemented!()
-        //         };
-
-        //         let i = Ins {
-        //             code: ByteCode::CmpEq,
-        //             arg: a
-        //         };
-
-        //         vm.add_instruction(i);
-        //     }
-        //     _ => unimplemented!()
-        // }
     }
-}
-
-fn compile_identifier(vm: &mut Vm, ast: Pair<Rule>) {
-
 }
 
 fn compile_set_stmt(vm: &mut Vm, ast: Pair<Rule>) {
     let mut inner = ast.into_inner();
 
-    compile_identifier(vm, inner.next().unwrap());
+    let s = inner.next().unwrap();
+
+    let arg = vm.store_identifier(s.as_str());
+
     compile_expr(vm, inner.next().unwrap());
+
+    let i = Ins{
+        code: ByteCode::Store,
+        arg: arg
+    };
+
+    vm.add_instruction(i);
 }
 
 fn compile_var_stmt(vm: &mut Vm, ast: Pair<Rule>) {
@@ -172,8 +158,6 @@ fn compile_var_stmt(vm: &mut Vm, ast: Pair<Rule>) {
     let s = inner.next().unwrap();
 
     let arg = vm.store_identifier(s.as_str());
-
-    println!("{} {}", s.as_str(), arg);
 
     compile_expr(vm, inner.next().unwrap());
 
@@ -194,8 +178,29 @@ fn compile_scope(vm: &mut Vm, ast: Pair<Rule>) {
 fn compile_while_stmt(vm: &mut Vm, ast: Pair<Rule>) {
     let mut inner = ast.into_inner();
 
+    let start_index = vm.get_instructions().len();
+
     compile_expr(vm, inner.next().unwrap());
+
+    let i = Ins {
+        code: ByteCode::JumpIfFalse,
+        arg: 0
+    };
+
+    vm.add_instruction(i);
+
+    let jump_index = vm.get_instructions().len() - 1;
+
     compile_scope(vm, inner.next().unwrap());
+
+    let i = Ins {
+        code: ByteCode::Jump,
+        arg: start_index as u32
+    };
+
+    vm.add_instruction(i);
+
+    vm.mod_arg(jump_index, vm.get_instructions().len() as u32);
 }
 
 fn compile_if_stmt(vm: &mut Vm, ast: Pair<Rule>) {

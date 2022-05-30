@@ -20,6 +20,11 @@ pub enum Rule {
     logical_and,
     logical_or,
     logical_eq,
+    logical_smaller,
+    logical_bigger,
+    logical_smaller_eq,
+    logical_bigger_eq,
+    logical_not_eq,
     factor,
     term,
     expr,
@@ -280,6 +285,41 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
+                pub fn logical_smaller(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_smaller, |state| state.match_string("<"))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn logical_bigger(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_bigger, |state| state.match_string(">"))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn logical_smaller_eq(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_smaller_eq, |state| state.match_string("<="))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn logical_bigger_eq(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_bigger_eq, |state| state.match_string(">="))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn logical_not_eq(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_not_eq, |state| state.match_string("!="))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
                 pub fn factor(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
@@ -405,6 +445,11 @@ impl ::pest::Parser<Rule> for MiniImp {
                                             self::logical_and(state)
                                                 .or_else(|state| self::logical_or(state))
                                                 .or_else(|state| self::logical_eq(state))
+                                                .or_else(|state| self::logical_smaller(state))
+                                                .or_else(|state| self::logical_bigger(state))
+                                                .or_else(|state| self::logical_smaller_eq(state))
+                                                .or_else(|state| self::logical_bigger_eq(state))
+                                                .or_else(|state| self::logical_not_eq(state))
                                                 .and_then(|state| super::hidden::skip(state))
                                                 .and_then(|state| self::expr(state))
                                         })
@@ -695,6 +740,11 @@ impl ::pest::Parser<Rule> for MiniImp {
             Rule::logical_and => rules::logical_and(state),
             Rule::logical_or => rules::logical_or(state),
             Rule::logical_eq => rules::logical_eq(state),
+            Rule::logical_smaller => rules::logical_smaller(state),
+            Rule::logical_bigger => rules::logical_bigger(state),
+            Rule::logical_smaller_eq => rules::logical_smaller_eq(state),
+            Rule::logical_bigger_eq => rules::logical_bigger_eq(state),
+            Rule::logical_not_eq => rules::logical_not_eq(state),
             Rule::factor => rules::factor(state),
             Rule::term => rules::term(state),
             Rule::expr => rules::expr(state),

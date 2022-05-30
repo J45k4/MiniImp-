@@ -27,6 +27,11 @@ truth = {
 logical_and = { "&&" }
 logical_or = { "||" }
 logical_eq = { "==" }
+logical_smaller = { "<" }
+logical_bigger = { ">" }
+logical_smaller_eq = { "<=" }
+logical_bigger_eq = { ">=" }
+logical_not_eq = { "!=" }
 
 factor = { 
     "(" ~ expr ~ ")" | 
@@ -36,7 +41,19 @@ factor = {
     string_literal
 }
 term = { factor ~ ((multi | divide) ~ factor)* }
-expr = { term ~ ((plus | minus) ~ term)* ~ ((logical_and | logical_or | logical_eq) ~ expr)? }
+expr = { 
+    term ~ ((plus | minus) ~ term)* ~ 
+    ((
+        logical_and | 
+        logical_or | 
+        logical_eq | 
+        logical_smaller | 
+        logical_bigger |
+        logical_smaller_eq |
+        logical_bigger_eq |
+        logical_not_eq
+    ) ~ expr)? 
+}
 
 arg = { expr ~ ( "," | &")" ) }
 

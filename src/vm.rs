@@ -1,6 +1,6 @@
 use std::{collections::{HashMap}};
 
-use crate::bytecode::{Ins, ByteCode};
+use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_OP, LOGICAL_AND};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -172,16 +172,30 @@ impl Vm {
                     let tos = self.stack.pop().unwrap();
                     let tos1 = self.stack.pop().unwrap();
 
-                    match (tos, tos1) {
-                        (Value::Number(n), Value::Number(n1)) => {
-                            let result = n == n1;
+                    match (tos, tos1, ins.arg) {
+                        (Value::Number(n2), Value::Number(n1), op) => {
+                            let result = match op {
+                                EQUAL_TO_OP => n1 == n2,
+                                SMALLER_THAN_OP => n1 < n2,
+                                GREATER_THAN_OP => n1 > n2,
+                                NOT_EQUAL_TO_OP => n1 != n2,
+                                GREATER_THAN_EQUAL_TO_OP => n1 >= n2,
+                                SMALLER_THAN_EQUAL_TO_OP => n1 <= n2,
+                                // LOGICAL_AND => n2 && n1,
+                                // LOGICAL_OR => n2 || n1,
+                                _ => unimplemented!()
+                            };
 
                             self.stack.push(Value::Boolean(result));
                         },
                         _ => unimplemented!()
                     }
                 },
-                ByteCode::Jump => todo!(),
+                ByteCode::Jump => {
+                    self.pc = ins.arg as usize;
+
+                    println!("jumping to {}", ins.arg);
+                },
             }
         }
     }
