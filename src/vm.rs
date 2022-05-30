@@ -1,6 +1,6 @@
 use std::{collections::{HashMap}};
 
-use crate::bytecode::Ins;
+use crate::bytecode::{Ins, ByteCode};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -34,6 +34,10 @@ impl Vm {
 
     pub fn get_instructions(&self) -> &Vec<Ins> {
         &self.instuctions
+    }
+
+    pub fn mod_arg(&mut self, index: usize, arg: u32) {
+        self.instuctions[index].arg = arg;
     }
 
     pub fn store(&mut self, key: u32, v: Value) {
@@ -128,7 +132,19 @@ impl Vm {
                 crate::bytecode::ByteCode::BinMinus => todo!(),
                 crate::bytecode::ByteCode::BinDivide => todo!(),
                 crate::bytecode::ByteCode::JumpIfTrue => todo!(),
-                crate::bytecode::ByteCode::JumpIfFalse => todo!(),
+                crate::bytecode::ByteCode::JumpIfFalse => {
+                    let tos = self.stack.pop().unwrap();
+
+                    match tos {
+                        Value::Boolean(true) => {},
+                        Value::Number(1.0..) => {}
+                        _ => {
+                            self.pc = ins.arg as usize;
+
+                            println!("jumping to {}", ins.arg);
+                        }
+                    };
+                },
                 crate::bytecode::ByteCode::ReturnValue => todo!(),
                 crate::bytecode::ByteCode::Call => {
                     //println!("{:?}", self);
@@ -152,6 +168,20 @@ impl Vm {
                         _ => unimplemented!()
                     }
                 },
+                ByteCode::CmpEq => {
+                    let tos = self.stack.pop().unwrap();
+                    let tos1 = self.stack.pop().unwrap();
+
+                    match (tos, tos1) {
+                        (Value::Number(n), Value::Number(n1)) => {
+                            let result = n == n1;
+
+                            self.stack.push(Value::Boolean(result));
+                        },
+                        _ => unimplemented!()
+                    }
+                },
+                ByteCode::Jump => todo!(),
             }
         }
     }

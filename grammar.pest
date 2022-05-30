@@ -11,30 +11,32 @@ minus = { "-" }
 multi = { "*" }
 divide = { "/" }
 
-true_bool = { "true" }
-false_bool = { "false" }
-
-boolean = { true_bool | false_bool }
+trueb = { "true" }
+falseb = { "false" }
 
 is = { "is" }
 not = { "not" }
 
 truth = { 
-    true_bool | 
-    false_bool | 
+    trueb | 
+    falseb | 
     not ~ truth | 
     is ~ identifier ~ expr 
 }
 
+logical_and = { "&&" }
+logical_or = { "||" }
+logical_eq = { "==" }
+
 factor = { 
     "(" ~ expr ~ ")" | 
-    number | 
+    number |
+    truth |
     identifier | 
-    string_literal | 
-    truth
+    string_literal
 }
 term = { factor ~ ((multi | divide) ~ factor)* }
-expr = { term ~ ((plus | minus) ~ term)* }
+expr = { term ~ ((plus | minus) ~ term)* ~ ((logical_and | logical_or | logical_eq) ~ expr)? }
 
 arg = { expr ~ ( "," | &")" ) }
 

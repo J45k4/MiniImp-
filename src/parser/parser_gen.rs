@@ -12,12 +12,14 @@ pub enum Rule {
     minus,
     multi,
     divide,
-    true_bool,
-    false_bool,
-    boolean,
+    trueb,
+    falseb,
     is,
     not,
     truth,
+    logical_and,
+    logical_or,
+    logical_eq,
     factor,
     term,
     expr,
@@ -203,26 +205,17 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn true_bool(
+                pub fn trueb(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::true_bool, |state| state.match_string("true"))
+                    state.rule(Rule::trueb, |state| state.match_string("true"))
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
-                pub fn false_bool(
+                pub fn falseb(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::false_bool, |state| state.match_string("false"))
-                }
-                #[inline]
-                #[allow(non_snake_case, unused_variables)]
-                pub fn boolean(
-                    state: Box<::pest::ParserState<Rule>>,
-                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
-                    state.rule(Rule::boolean, |state| {
-                        self::true_bool(state).or_else(|state| self::false_bool(state))
-                    })
+                    state.rule(Rule::falseb, |state| state.match_string("false"))
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
@@ -244,8 +237,8 @@ impl ::pest::Parser<Rule> for MiniImp {
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
                     state.rule(Rule::truth, |state| {
-                        self::true_bool(state)
-                            .or_else(|state| self::false_bool(state))
+                        self::trueb(state)
+                            .or_else(|state| self::falseb(state))
                             .or_else(|state| {
                                 state.sequence(|state| {
                                     self::not(state)
@@ -266,6 +259,27 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
+                pub fn logical_and(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_and, |state| state.match_string("&&"))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn logical_or(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_or, |state| state.match_string("||"))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn logical_eq(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::logical_eq, |state| state.match_string("=="))
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
                 pub fn factor(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
@@ -280,9 +294,9 @@ impl ::pest::Parser<Rule> for MiniImp {
                                     .and_then(|state| state.match_string(")"))
                             })
                             .or_else(|state| self::number(state))
+                            .or_else(|state| self::truth(state))
                             .or_else(|state| self::identifier(state))
                             .or_else(|state| self::string_literal(state))
-                            .or_else(|state| self::truth(state))
                     })
                 }
                 #[inline]
@@ -381,6 +395,18 @@ impl ::pest::Parser<Rule> for MiniImp {
                                                         })
                                                     })
                                                 })
+                                        })
+                                    })
+                                })
+                                .and_then(|state| super::hidden::skip(state))
+                                .and_then(|state| {
+                                    state.optional(|state| {
+                                        state.sequence(|state| {
+                                            self::logical_and(state)
+                                                .or_else(|state| self::logical_or(state))
+                                                .or_else(|state| self::logical_eq(state))
+                                                .and_then(|state| super::hidden::skip(state))
+                                                .and_then(|state| self::expr(state))
                                         })
                                     })
                                 })
@@ -661,12 +687,14 @@ impl ::pest::Parser<Rule> for MiniImp {
             Rule::minus => rules::minus(state),
             Rule::multi => rules::multi(state),
             Rule::divide => rules::divide(state),
-            Rule::true_bool => rules::true_bool(state),
-            Rule::false_bool => rules::false_bool(state),
-            Rule::boolean => rules::boolean(state),
+            Rule::trueb => rules::trueb(state),
+            Rule::falseb => rules::falseb(state),
             Rule::is => rules::is(state),
             Rule::not => rules::not(state),
             Rule::truth => rules::truth(state),
+            Rule::logical_and => rules::logical_and(state),
+            Rule::logical_or => rules::logical_or(state),
+            Rule::logical_eq => rules::logical_eq(state),
             Rule::factor => rules::factor(state),
             Rule::term => rules::term(state),
             Rule::expr => rules::expr(state),

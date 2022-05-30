@@ -10,7 +10,7 @@ fn main() {
 
     let ast = parser::parse_text(&file_content).unwrap();
 
-    //println!("{:?}", ast);
+    println!("{:#?}", ast);
 
     let mut vm = compile(ast);
 
@@ -18,5 +18,5 @@ fn main() {
 
     vm.run();
 
-    println!("{:?}", vm);
+    //println!("{:?}", vm);
 }

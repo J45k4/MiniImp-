@@ -58,4 +58,15 @@ end.
     fn test_parse_math() {
         parse_text(r#"var x = 2 * 5 + 2 / (2 * 2);"#).unwrap();
     }
+
+    #[test]
+    fn test_bool() {
+        let r = parse_text(r#"var x = true;"#).unwrap();
+
+        println!("{:?}", r);
+
+        let r = parse_text(r#"var x = false;"#).unwrap();
+
+        println!("{:?}", r);
+    }
 }
