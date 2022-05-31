@@ -2,12 +2,25 @@ use std::{collections::{HashMap}};
 
 use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_OP, LOGICAL_AND};
 
+pub enum Action {
+    Sleep(u32),
+    Line(u32, u32, u32, u32)
+}
+
+pub enum VmRunResult {
+    Continue,
+    Actions(Vec<Action>),
+    Stop
+}
+
 #[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
     String(String),
     Boolean(bool),
     Print,
+    Line,
+    Sleep,
     None,
     Empty
 }
@@ -58,6 +71,8 @@ impl Vm {
             None => {
                 let val = match name {
                     "print" => Value::Print,
+                    "sleep" => Value::Sleep,
+                    "line" => Value::Line,
                     _ => Value::Empty
                 };
 
@@ -82,88 +97,118 @@ impl Vm {
         self.instuctions.push(ins);
     }
 
-    pub fn run(&mut self) {
+    pub fn work(&mut self) -> VmRunResult {
+        let mut actions = vec![];
+
         let len = self.instuctions.len();
 
-        while self.pc <  len {
+        while self.pc < len {
             let pc = self.pc;
             self.pc += 1;
-
+    
             let ins = &self.instuctions[pc];
-
+    
             match ins.code {
-                crate::bytecode::ByteCode::Nope => todo!(),
-                crate::bytecode::ByteCode::LoadConst => {
+                ByteCode::Nope => todo!(),
+                ByteCode::LoadConst => {
                     let v = self.load(ins.arg);
-
+    
                     self.stack.push(v);
                 },
-                crate::bytecode::ByteCode::Store => {
+                ByteCode::Store => {
                     let v = self.stack.pop().unwrap();
-
+    
                     println!("storing value {:?}", v);
-
+    
                     self.store(ins.arg, v);
                 },
-                crate::bytecode::ByteCode::Load => {
+                ByteCode::Load => {
                     let v = self.load(ins.arg);
-
+    
                     self.stack.push(v);
                 },
-                crate::bytecode::ByteCode::BinMul => todo!(),
-                crate::bytecode::ByteCode::BinAdd => {
+                ByteCode::BinMul => todo!(),
+                ByteCode::BinAdd => {
                     let tos = self.stack.pop().unwrap();
                     let tos1 = self.stack.pop().unwrap();
-
+    
                     let tos_v = match tos {
                         Value::Number(n) => n,
                         _ => unimplemented!()
                     };
-
+    
                     let tos1_v = match tos1 {
                         Value::Number(n) => n,
                         _ => unimplemented!()
                     };
-
+    
                     let result = tos_v + tos1_v;
-
+    
                     self.stack.push(Value::Number(result));
                 },
-                crate::bytecode::ByteCode::BinMinus => todo!(),
-                crate::bytecode::ByteCode::BinDivide => todo!(),
-                crate::bytecode::ByteCode::JumpIfTrue => todo!(),
-                crate::bytecode::ByteCode::JumpIfFalse => {
+                ByteCode::BinMinus => todo!(),
+                ByteCode::BinDivide => todo!(),
+                ByteCode::JumpIfTrue => todo!(),
+                ByteCode::JumpIfFalse => {
                     let tos = self.stack.pop().unwrap();
-
+    
                     match tos {
                         Value::Boolean(true) => {},
                         Value::Number(1.0..) => {}
                         _ => {
                             self.pc = ins.arg as usize;
-
+    
                             println!("jumping to {}", ins.arg);
                         }
                     };
                 },
-                crate::bytecode::ByteCode::ReturnValue => todo!(),
-                crate::bytecode::ByteCode::Call => {
-                    //println!("{:?}", self);
-                    ins.arg;
-
+                ByteCode::ReturnValue => todo!(),
+                ByteCode::Call => {    
                     let mut args = vec![];
-
+    
                     for i in 0..ins.arg {
                         let v = self.stack.pop().unwrap();
                         args.push(v);
                     }
 
-                    println!("calling with args {:?}", args);
-
                     let v = self.stack.pop().unwrap();
-
+    
                     match v {
                         Value::Print => {
                             println!("{:?}", args);
+                        },
+                        Value::Line => {    
+                            let mut args = args.into_iter().rev();
+    
+                            let x = args.next().unwrap();
+                            let y = args.next().unwrap();
+                            let w = args.next().unwrap();
+                            let h = args.next().unwrap();
+    
+                            match (x, y, w, h) {
+                                (Value::Number(x), Value::Number(y), Value::Number(w), Value::Number(h)) => {    
+                                    actions.push(Action::Line(x as u32, y as u32, w as u32, h as u32));
+                                },
+                                _ => {
+                                    println!("invalid line args");
+                                }
+                            }
+                        },
+                        Value::Sleep => {
+                            if args.len() != 1 {
+                                panic!("sleep needs 1 argument");
+                            }
+    
+                            match args[0] {
+                                Value::Number(n) => {
+                                    println!("sleeping for {}", n);
+    
+                                    actions.push(Action::Sleep(n as u32));
+    
+                                    return VmRunResult::Actions(actions);
+                                },
+                                _ => panic!("sleep needs a number")
+                            }
                         },
                         _ => unimplemented!()
                     }
@@ -171,7 +216,7 @@ impl Vm {
                 ByteCode::CmpEq => {
                     let tos = self.stack.pop().unwrap();
                     let tos1 = self.stack.pop().unwrap();
-
+    
                     match (tos, tos1, ins.arg) {
                         (Value::Number(n2), Value::Number(n1), op) => {
                             let result = match op {
@@ -185,7 +230,7 @@ impl Vm {
                                 // LOGICAL_OR => n2 || n1,
                                 _ => unimplemented!()
                             };
-
+    
                             self.stack.push(Value::Boolean(result));
                         },
                         _ => unimplemented!()
@@ -193,10 +238,12 @@ impl Vm {
                 },
                 ByteCode::Jump => {
                     self.pc = ins.arg as usize;
-
+    
                     println!("jumping to {}", ins.arg);
                 },
-            }
+            };
         }
+
+        VmRunResult::Stop 
     }
 }

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use compiler::compile;
 
@@ -8,60 +8,55 @@ mod bytecode;
 mod vm;
 mod window;
 use sdl2::{pixels::Color, keyboard::Keycode, event::Event, rect::Point};
+use window::Window;
 
 fn main() {
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
+    let file_content = std::fs::read_to_string("./example.mi").unwrap();
+    let ast = parser::parse_text(&file_content).unwrap();
 
-    let window = video_subsystem.window("rust-sdl2 demo", 800, 600)
-        .position_centered()
-        .build()
-        .unwrap();
+    let mut vm = compile(ast);
 
-    let mut canvas = window.into_canvas().build().unwrap();
+    println!("{:?}", vm);
 
-    canvas.set_draw_color(Color::RGB(0, 255, 255));
-    canvas.clear();
-    canvas.present();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut i = 0;
-    'running: loop {
-        // i = (i + 1) % 255;
-        // canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
+    let mut win = Window::new("Big bop");
 
-        canvas.clear();
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
+    let mut sleep: Option<(Instant, u32)> = None;
+
+    loop {
+        if !win.work() {
+            break;
         }
 
-        canvas.set_draw_color(Color::RGB(255, 255, 0));
-        canvas.draw_line(Point::new(20, 20), Point::new(100, 100)).unwrap();
+        let sleeping = match sleep {
+            Some((i, t)) => {
+                if i.elapsed().as_millis() > t.into() {
+                    false
+                } else {
+                    true
+                }                
+            },
+            None => false
+        };
 
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
-
-        // The rest of the game loop goes here...
-
-        canvas.present();
+        if !sleeping {
+            match vm.work() {
+                vm::VmRunResult::Continue => {},
+                vm::VmRunResult::Stop => return,
+                vm::VmRunResult::Actions(actions) => {
+                    for a in actions {
+                        match a {
+                            vm::Action::Sleep(t) => {
+                                sleep = Some((Instant::now(), t));
+                            },
+                            vm::Action::Line(x, y, x2, y2) => {
+                                win.draw_line(x, y, x2, y2);
+                            },                            
+                        }
+                    }
+                },
+            };
+        }
+        
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
-
-    // let file_content = std::fs::read_to_string("./example.mi").unwrap();
-
-    // let ast = parser::parse_text(&file_content).unwrap();
-
-    // println!("{:#?}", ast);
-
-    // let mut vm = compile(ast);
-
-    // println!("{:?}", vm);
-
-    // vm.run();
-
-    //println!("{:?}", vm);
 }

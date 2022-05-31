@@ -1,13 +1,14 @@
-var x = 2;
-
-if x + 13 == 15 then
-    print(x);
-end.*
-
 var i = 0;
 
-while i < 10 begin
+while i < 150 begin
     set i = i + 1;
+
+    var x = 0 + i + 50;
+    var y = 200 + i + 50;
+    var x2 = 600 + i + 50;
+    var y2 = 100 + i + 50;
+
+    line(x, y, x2, y2);
 end.
 
-print(i);
+sleep(5000);
