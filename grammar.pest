@@ -1,6 +1,7 @@
 
 number = @{ (ASCII_DIGIT)+ }
-string_literal = { "\"" ~ ASCII_ALPHANUMERIC* ~ "\"" }
+string = { ASCII_ALPHANUMERIC* }
+string_literal = { "\"" ~ string ~ "\"" }
 identifier = @{ ASCII_ALPHANUMERIC+ }
 
 WHITESPACE = _{ " " | NEWLINE }

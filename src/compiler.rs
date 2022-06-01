@@ -31,6 +31,9 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
                 vm.store_new(crate::vm::Value::Number(num))
             },
             Rule::string_literal => {
+                let inner = inner.into_inner().next().unwrap();
+                println!("inner {:?}", inner);
+
                 let str = inner.as_str();
                 vm.store_new(Value::String(str.to_string()))
             },

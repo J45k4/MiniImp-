@@ -4,9 +4,10 @@ use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_
 
 pub enum Action {
     Sleep(u32),
-    Line(u32, u32, u32, u32),
-    Rectangle(u32, u32, u32, u32),
-    Circle(u32, u32, u32),
+    Line(u32, u32, u32, u32, String),
+    Rectangle(u32, u32, u32, u32, String),
+    Circle(u32, u32, u32, String),
+    Clear
 }
 
 pub enum VmRunResult {
@@ -27,6 +28,7 @@ pub enum Value {
     Line,
     Rectangle,
     Circle,
+    Clear
 }
 
 #[derive(Debug)]
@@ -79,6 +81,7 @@ impl Vm {
                     "line" => Value::Line,
                     "rectangle" => Value::Rectangle,
                     "circle" => Value::Circle,
+                    "clear" => Value::Clear,
                     _ => Value::Empty
                 };
 
@@ -183,17 +186,23 @@ impl Vm {
                         Value::Print => {
                             println!("{:?}", args);
                         },
-                        Value::Line => {    
+                        Value::Line => {   
+                            if args.len() != 5 {
+                                panic!("rectangle needs 5 arguments");
+                            }
+                            
                             let mut args = args.into_iter().rev();
     
                             let x = args.next().unwrap();
                             let y = args.next().unwrap();
                             let w = args.next().unwrap();
                             let h = args.next().unwrap();
+                            let color = args.next().unwrap();
     
-                            match (x, y, w, h) {
-                                (Value::Number(x), Value::Number(y), Value::Number(w), Value::Number(h)) => {    
-                                    actions.push(Action::Line(x as u32, y as u32, w as u32, h as u32));
+                            match (x, y, w, h, color) {
+                                (Value::Number(x), Value::Number(y), 
+                                Value::Number(w), Value::Number(h), Value::String(color)) => {    
+                                    actions.push(Action::Line(x as u32, y as u32, w as u32, h as u32, color));
                                 },
                                 _ => {
                                     println!("invalid line args");
@@ -217,8 +226,8 @@ impl Vm {
                             }
                         },
                         Value::Rectangle => {
-                            if args.len() > 4 {
-                                panic!("rectangle needs 4 arguments");
+                            if args.len() != 5 {
+                                panic!("rectangle needs 5 arguments");
                             }
 
                             let mut args = args.into_iter().rev();
@@ -227,10 +236,14 @@ impl Vm {
                             let y = args.next().unwrap();
                             let w = args.next().unwrap();
                             let h = args.next().unwrap();
+                            let color = args.next().unwrap();
+
+                            println!("rectangle color {:?}", color);
     
-                            match (x, y, w, h) {
-                                (Value::Number(x), Value::Number(y), Value::Number(w), Value::Number(h)) => {    
-                                    actions.push(Action::Rectangle(x as u32, y as u32, w as u32, h as u32));
+                            match (x, y, w, h, color) {
+                                (Value::Number(x), Value::Number(y), 
+                                    Value::Number(w), Value::Number(h), Value::String(color)) => {    
+                                    actions.push(Action::Rectangle(x as u32, y as u32, w as u32, h as u32, color));
                                 },
                                 _ => {
                                     println!("invalid line args");
@@ -238,8 +251,8 @@ impl Vm {
                             }
                         },
                         Value::Circle => {
-                            if args.len() > 3 {
-                                panic!("circle needs 3 arguments");
+                            if args.len() != 4 {
+                                panic!("circle needs 4 arguments");
                             }
 
                             let mut args = args.into_iter().rev();
@@ -247,16 +260,20 @@ impl Vm {
                             let x = args.next().unwrap();
                             let y = args.next().unwrap();
                             let r = args.next().unwrap();
+                            let color = args.next().unwrap();
 
-                            match (x, y, r) {
-                                (Value::Number(x), Value::Number(y), Value::Number(r)) => {    
-                                    actions.push(Action::Circle(x as u32, y as u32, r as u32));
+                            match (x, y, r, color) {
+                                (Value::Number(x), Value::Number(y), Value::Number(r), Value::String(color)) => {    
+                                    actions.push(Action::Circle(x as u32, y as u32, r as u32, color));
                                 },
                                 _ => {
                                     println!("invalid line args");
                                 }
                             }
-                        }
+                        },
+                        Value::Clear => {
+                            actions.push(Action::Clear);
+                        },
                         _ => unimplemented!()
                     }
                 },

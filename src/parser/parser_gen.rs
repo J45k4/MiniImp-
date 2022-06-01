@@ -4,6 +4,7 @@ use super::MiniImp;
 pub enum Rule {
     EOI,
     number,
+    string,
     string_literal,
     identifier,
     WHITESPACE,
@@ -94,6 +95,26 @@ impl ::pest::Parser<Rule> for MiniImp {
                 }
                 #[inline]
                 #[allow(non_snake_case, unused_variables)]
+                pub fn string(
+                    state: Box<::pest::ParserState<Rule>>,
+                ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
+                    state.rule(Rule::string, |state| {
+                        state.sequence(|state| {
+                            state.optional(|state| {
+                                self::ASCII_ALPHANUMERIC(state).and_then(|state| {
+                                    state.repeat(|state| {
+                                        state.sequence(|state| {
+                                            super::hidden::skip(state)
+                                                .and_then(|state| self::ASCII_ALPHANUMERIC(state))
+                                        })
+                                    })
+                                })
+                            })
+                        })
+                    })
+                }
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
                 pub fn string_literal(
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
@@ -102,21 +123,7 @@ impl ::pest::Parser<Rule> for MiniImp {
                             state
                                 .match_string("\"")
                                 .and_then(|state| super::hidden::skip(state))
-                                .and_then(|state| {
-                                    state.sequence(|state| {
-                                        state.optional(|state| {
-                                            self::ASCII_ALPHANUMERIC(state).and_then(|state| {
-                                                state.repeat(|state| {
-                                                    state.sequence(|state| {
-                                                        super::hidden::skip(state).and_then(
-                                                            |state| self::ASCII_ALPHANUMERIC(state),
-                                                        )
-                                                    })
-                                                })
-                                            })
-                                        })
-                                    })
-                                })
+                                .and_then(|state| self::string(state))
                                 .and_then(|state| super::hidden::skip(state))
                                 .and_then(|state| state.match_string("\""))
                         })
@@ -724,6 +731,7 @@ impl ::pest::Parser<Rule> for MiniImp {
         }
         ::pest::state(input, |state| match rule {
             Rule::number => rules::number(state),
+            Rule::string => rules::string(state),
             Rule::string_literal => rules::string_literal(state),
             Rule::identifier => rules::identifier(state),
             Rule::WHITESPACE => rules::WHITESPACE(state),

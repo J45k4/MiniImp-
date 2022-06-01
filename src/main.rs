@@ -48,16 +48,18 @@ fn main() {
                             vm::Action::Sleep(t) => {
                                 sleep = Some((Instant::now(), t));
                             },
-                            vm::Action::Line(x, y, x2, y2) => {
-                                win.draw_line(x, y, x2, y2);
+                            vm::Action::Line(x, y, x2, y2, color) => {
+                                win.draw_line(x, y, x2, y2, color);
                             },
-                            vm::Action::Rectangle(x, y, x2, y2) => {
-                                win.draw_rect(x, y, x2, y2);
+                            vm::Action::Rectangle(x, y, x2, y2, color) => {
+                                win.draw_rect(x, y, x2, y2, color);
                             },
-                            vm::Action::Circle(x, y, r) => {
-                                win.draw_circle(x, y, r as i32);
+                            vm::Action::Circle(x, y, r, color) => {
+                                win.draw_circle(x, y, r as i32, color);
                             },
-                                                   
+                            vm::Action::Clear => {
+                                win.clear();
+                            }                     
                         }
                     }
                 },
