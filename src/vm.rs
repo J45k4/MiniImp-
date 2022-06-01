@@ -4,7 +4,9 @@ use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_
 
 pub enum Action {
     Sleep(u32),
-    Line(u32, u32, u32, u32)
+    Line(u32, u32, u32, u32),
+    Rectangle(u32, u32, u32, u32),
+    Circle(u32, u32, u32),
 }
 
 pub enum VmRunResult {
@@ -19,10 +21,12 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Print,
-    Line,
     Sleep,
     None,
-    Empty
+    Empty,
+    Line,
+    Rectangle,
+    Circle,
 }
 
 #[derive(Debug)]
@@ -73,6 +77,8 @@ impl Vm {
                     "print" => Value::Print,
                     "sleep" => Value::Sleep,
                     "line" => Value::Line,
+                    "rectangle" => Value::Rectangle,
+                    "circle" => Value::Circle,
                     _ => Value::Empty
                 };
 
@@ -210,6 +216,47 @@ impl Vm {
                                 _ => panic!("sleep needs a number")
                             }
                         },
+                        Value::Rectangle => {
+                            if args.len() > 4 {
+                                panic!("rectangle needs 4 arguments");
+                            }
+
+                            let mut args = args.into_iter().rev();
+    
+                            let x = args.next().unwrap();
+                            let y = args.next().unwrap();
+                            let w = args.next().unwrap();
+                            let h = args.next().unwrap();
+    
+                            match (x, y, w, h) {
+                                (Value::Number(x), Value::Number(y), Value::Number(w), Value::Number(h)) => {    
+                                    actions.push(Action::Rectangle(x as u32, y as u32, w as u32, h as u32));
+                                },
+                                _ => {
+                                    println!("invalid line args");
+                                }
+                            }
+                        },
+                        Value::Circle => {
+                            if args.len() > 3 {
+                                panic!("circle needs 3 arguments");
+                            }
+
+                            let mut args = args.into_iter().rev();
+
+                            let x = args.next().unwrap();
+                            let y = args.next().unwrap();
+                            let r = args.next().unwrap();
+
+                            match (x, y, r) {
+                                (Value::Number(x), Value::Number(y), Value::Number(r)) => {    
+                                    actions.push(Action::Circle(x as u32, y as u32, r as u32));
+                                },
+                                _ => {
+                                    println!("invalid line args");
+                                }
+                            }
+                        }
                         _ => unimplemented!()
                     }
                 },

@@ -50,7 +50,14 @@ fn main() {
                             },
                             vm::Action::Line(x, y, x2, y2) => {
                                 win.draw_line(x, y, x2, y2);
-                            },                            
+                            },
+                            vm::Action::Rectangle(x, y, x2, y2) => {
+                                win.draw_rect(x, y, x2, y2);
+                            },
+                            vm::Action::Circle(x, y, r) => {
+                                win.draw_circle(x, y, r as i32);
+                            },
+                                                   
                         }
                     }
                 },

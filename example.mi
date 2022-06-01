@@ -1,14 +1,6 @@
-var i = 0;
 
-while i < 150 begin
-    set i = i + 1;
 
-    var x = 0 + i + 50;
-    var y = 200 + i + 50;
-    var x2 = 600 + i + 50;
-    var y2 = 100 + i + 50;
+circle(300, 300, 200);
 
-    line(x, y, x2, y2);
-end.
 
 sleep(5000);
