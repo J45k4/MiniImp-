@@ -30,6 +30,8 @@ fn main() {
         let sleeping = match sleep {
             Some((i, t)) => {
                 if i.elapsed().as_millis() > t.into() {
+                    sleep = None;
+
                     false
                 } else {
                     true

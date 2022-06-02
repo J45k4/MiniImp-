@@ -118,7 +118,6 @@ impl Vm {
             let ins = &self.instuctions[pc];
     
             match ins.code {
-                ByteCode::Nope => todo!(),
                 ByteCode::LoadConst => {
                     let v = self.load(ins.arg);
     

@@ -1,7 +1,6 @@
 
 #[derive(Debug)]
 pub enum ByteCode {
-    Nope,
     Load,
     Store,
     LoadConst,
