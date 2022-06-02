@@ -8,7 +8,7 @@ library. Grammar for the language can be found from
 "grammar.pest" file. When the code is parsed to AST
 it is compiled to vm bytecode and can be executed.
 
-**Aarchitecture of the compiler**
+**Aarchitecture of the intepreter**
 
 ![alt text](architecture.png "Title")
 
