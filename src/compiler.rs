@@ -115,7 +115,9 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
             Rule::logical_bigger |
             Rule::logical_smaller_eq |
             Rule::logical_bigger_eq |
-            Rule::logical_not_eq => {
+            Rule::logical_not_eq |
+            Rule::is |
+            Rule::not => {
                 compile_expr(vm, inner.next().unwrap());
 
                 let a = match next_rule {
@@ -127,6 +129,8 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
                     Rule::logical_smaller_eq => SMALLER_THAN_EQUAL_TO_OP,
                     Rule::logical_bigger_eq => GREATER_THAN_EQUAL_TO_OP,
                     Rule::logical_not_eq => NOT_EQUAL_TO_OP,
+                    Rule::is => EQUAL_TO_OP,
+                    Rule::not => NOT_EQUAL_TO_OP,
                     _ => unimplemented!()
                 };
 

@@ -7,8 +7,10 @@ mod compiler;
 mod bytecode;
 mod vm;
 mod window;
+mod tests;
 use log::LevelFilter;
 use window::Window;
+
 
 enum RunMode {
     Debug,

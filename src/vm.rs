@@ -1,6 +1,6 @@
 use std::{collections::{HashMap}};
 
-use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_OP, LOGICAL_AND};
+use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_OP, LOGICAL_AND, GREATER_THAN_EQUAL_TO_OP, NOT_EQUAL_TO_OP, SMALLER_THAN_EQUAL_TO_OP};
 
 pub enum Action {
     Sleep(u32),
@@ -23,7 +23,6 @@ pub enum Value {
     Boolean(bool),
     Print,
     Sleep,
-    None,
     Empty,
     Line,
     Rectangle,
@@ -159,7 +158,6 @@ impl Vm {
                         }
                     }
                 },
-                ByteCode::JumpIfTrue => todo!(),
                 ByteCode::JumpIfFalse => {
                     let tos = self.stack.pop().unwrap();
     
@@ -171,11 +169,10 @@ impl Vm {
                         }
                     };
                 },
-                ByteCode::ReturnValue => todo!(),
                 ByteCode::Call => {    
                     let mut args = vec![];
     
-                    for i in 0..ins.arg {
+                    for _ in 0..ins.arg {
                         let v = self.stack.pop().unwrap();
                         args.push(v);
                     }
@@ -292,8 +289,8 @@ impl Vm {
                     let tos = self.stack.pop().unwrap();
                     let tos1 = self.stack.pop().unwrap();
     
-                    match (tos, tos1, ins.arg) {
-                        (Value::Number(n2), Value::Number(n1), op) => {
+                    match (tos1, tos, ins.arg) {
+                        (Value::Number(n1), Value::Number(n2), op) => {
                             let result = match op {
                                 EQUAL_TO_OP => n1 == n2,
                                 SMALLER_THAN_OP => n1 < n2,
@@ -330,6 +327,11 @@ impl Vm {
         }
 
         None
+    }
+
+    pub fn get_variable(&self, name: &str) -> Value {
+        let index = self.identifier_map.get(name).unwrap();
+        self.values.get(*index as usize).unwrap().clone()
     }
 
     pub fn disassemble(&self) {

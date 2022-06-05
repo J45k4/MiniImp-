@@ -15,8 +15,6 @@ fn convert_color(color: &str) -> Color {
 }
 
 pub struct Window {
-    sdl: Sdl,
-    video_subsystem: VideoSubsystem,
     event_pump: EventPump,
     canvas: Canvas<sdl2::video::Window>,
 }
@@ -37,9 +35,7 @@ impl Window {
 
         canvas.clear();
 
-        Window { 
-            sdl: sdl_context,
-            video_subsystem: video_subsystem,
+        Window {
             event_pump: event_pump,
             canvas: canvas
         }

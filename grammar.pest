@@ -20,9 +20,7 @@ not = { "not" }
 
 truth = { 
     trueb | 
-    falseb | 
-    not ~ truth | 
-    is ~ identifier ~ expr 
+    falseb
 }
 
 logical_and = { "&&" }
@@ -48,11 +46,13 @@ expr = {
         logical_and | 
         logical_or | 
         logical_eq | 
-        logical_smaller | 
-        logical_bigger |
         logical_smaller_eq |
         logical_bigger_eq |
-        logical_not_eq
+        logical_smaller | 
+        logical_bigger |
+        logical_not_eq |
+        is |
+        not
     ) ~ expr)? 
 }
 

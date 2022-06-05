@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pest::{Parser, iterators::Pairs, Token};
+use pest::{Parser, iterators::Pairs};
 
 mod parser_gen;
 
@@ -68,5 +68,26 @@ end.
         let r = parse_text(r#"var x = false;"#).unwrap();
 
         println!("{:?}", r);
+    }
+
+    #[test]
+    fn test_parse_is_not() {
+        parse_text(r#"var x = 2 not 2;"#).unwrap();
+        parse_text(r#"var x = 2 is 2;"#).unwrap();
+    }
+
+    #[test]
+    fn test_parse_operators() {
+        parse_text(r#"
+        var x = 1 != 2;
+        var y = 1 <= 2;
+        var z = 1 >= 2;
+        var a = 1 < 2;
+        var b = 1 > 2;
+        var c = 1 == 2;
+        var d = 1 != 2;
+        var e = 1 && 2;
+        var f = 1 || 2;
+        "#).unwrap();
     }
 }

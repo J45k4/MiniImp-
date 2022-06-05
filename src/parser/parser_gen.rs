@@ -249,24 +249,7 @@ impl ::pest::Parser<Rule> for MiniImp {
                     state: Box<::pest::ParserState<Rule>>,
                 ) -> ::pest::ParseResult<Box<::pest::ParserState<Rule>>> {
                     state.rule(Rule::truth, |state| {
-                        self::trueb(state)
-                            .or_else(|state| self::falseb(state))
-                            .or_else(|state| {
-                                state.sequence(|state| {
-                                    self::not(state)
-                                        .and_then(|state| super::hidden::skip(state))
-                                        .and_then(|state| self::truth(state))
-                                })
-                            })
-                            .or_else(|state| {
-                                state.sequence(|state| {
-                                    self::is(state)
-                                        .and_then(|state| super::hidden::skip(state))
-                                        .and_then(|state| self::identifier(state))
-                                        .and_then(|state| super::hidden::skip(state))
-                                        .and_then(|state| self::expr(state))
-                                })
-                            })
+                        self::trueb(state).or_else(|state| self::falseb(state))
                     })
                 }
                 #[inline]
@@ -452,11 +435,13 @@ impl ::pest::Parser<Rule> for MiniImp {
                                             self::logical_and(state)
                                                 .or_else(|state| self::logical_or(state))
                                                 .or_else(|state| self::logical_eq(state))
-                                                .or_else(|state| self::logical_smaller(state))
-                                                .or_else(|state| self::logical_bigger(state))
                                                 .or_else(|state| self::logical_smaller_eq(state))
                                                 .or_else(|state| self::logical_bigger_eq(state))
+                                                .or_else(|state| self::logical_smaller(state))
+                                                .or_else(|state| self::logical_bigger(state))
                                                 .or_else(|state| self::logical_not_eq(state))
+                                                .or_else(|state| self::is(state))
+                                                .or_else(|state| self::not(state))
                                                 .and_then(|state| super::hidden::skip(state))
                                                 .and_then(|state| self::expr(state))
                                         })

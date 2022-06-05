@@ -8,9 +8,7 @@ pub enum ByteCode {
     BinMinus,
     BinDivide,
     Jump,
-    JumpIfTrue,
     JumpIfFalse,
-    ReturnValue,
     Call,
     CmpEq,
 }
