@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::{time::{Duration, Instant}, env};
 
 use compiler::compile;
 
@@ -7,18 +7,57 @@ mod compiler;
 mod bytecode;
 mod vm;
 mod window;
-use sdl2::{pixels::Color, keyboard::Keycode, event::Event, rect::Point};
+use log::LevelFilter;
 use window::Window;
 
-fn main() {
-    let file_content = std::fs::read_to_string("./example.mi").unwrap();
-    let ast = parser::parse_text(&file_content).unwrap();
+enum RunMode {
+    Debug,
+    Dis,
+    Normal
+}
 
+fn has_arg(args: &[String], name: &str) -> bool {
+    args.iter().any(|arg| arg == name)
+}
+
+fn main() {
+    let mut logger_builder = env_logger::Builder::new();
+    logger_builder.format_timestamp(None);
+
+    let args: Vec<String> = env::args().collect();
+
+    let app = &args[1];
+
+    let (path, mode) = match app.as_str() {
+        "dis" => {
+            (args[2].as_str(), RunMode::Dis)
+        },
+        "debug" => {
+            (args[2].as_str(), RunMode::Debug)
+        },
+        s => {
+            (s, RunMode::Normal)
+        }
+    };
+
+    if has_arg(&args, "--verbose") {
+        logger_builder.filter_level(LevelFilter::Debug);
+    } else {
+        logger_builder.filter_level(LevelFilter::Info);
+    }
+
+    logger_builder.init();
+
+    let file_content = std::fs::read_to_string(path).unwrap();
+    let ast = parser::parse_text(&file_content).unwrap();
     let mut vm = compile(ast);
 
-    println!("{:?}", vm);
+    if let RunMode::Dis = mode {
+        vm.disassemble();
+        return;
+    }
 
-    let mut win = Window::new("Big bop");
+    let mut win = Window::new("Big bob");
 
     let mut sleep: Option<(Instant, u32)> = None;
 

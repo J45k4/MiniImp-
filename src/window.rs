@@ -75,7 +75,7 @@ impl Window {
 
             self.canvas.draw_line(
                 Point::new(x - offsetx, y + offsety), 
-                Point::new(x + offsety, y + offsetx)).unwrap();
+                Point::new(x + offsetx, y + offsety)).unwrap();
             
             self.canvas.draw_line(
                 Point::new(x - offsetx, y - offsety), 

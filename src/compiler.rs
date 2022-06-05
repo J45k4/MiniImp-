@@ -5,6 +5,8 @@ use crate::parser::Rule;
 use crate::vm::{Vm, Value};
 
 fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_factor");
+
     let mut inner = ast.into_inner();
 
     let inner = inner.next().unwrap();
@@ -32,7 +34,6 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
             },
             Rule::string_literal => {
                 let inner = inner.into_inner().next().unwrap();
-                println!("inner {:?}", inner);
 
                 let str = inner.as_str();
                 vm.store_new(Value::String(str.to_string()))
@@ -54,6 +55,8 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_term(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_term");
+
     let mut inner = ast.into_inner();
 
     compile_factor(vm, inner.next().unwrap());
@@ -68,9 +71,16 @@ fn compile_term(vm: &mut Vm, ast: Pair<Rule>) {
     };
 
     compile_factor(vm, inner.next().unwrap());
+
+    vm.add_instruction(Ins{
+        code,
+        arg: 0
+    });
 }
 
 fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_expr");
+
     let mut inner = ast.into_inner();
 
     loop {
@@ -139,6 +149,8 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_set_stmt(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_set_stmt");
+
     let mut inner = ast.into_inner();
 
     let s = inner.next().unwrap();
@@ -156,6 +168,8 @@ fn compile_set_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_var_stmt(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_var_stmt");
+
     let mut inner = ast.into_inner();
 
     let s = inner.next().unwrap();
@@ -173,12 +187,16 @@ fn compile_var_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_scope(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_scope");
+
     let mut inner = ast.into_inner();
 
     compile_stmts(vm, inner.next().unwrap());
 }
 
 fn compile_while_stmt(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_while_stmt");
+
     let mut inner = ast.into_inner();
 
     let start_index = vm.get_instructions().len();
@@ -207,6 +225,8 @@ fn compile_while_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_if_stmt(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_if_stmt");
+
     let mut inner = ast.into_inner();
 
     compile_expr(vm, inner.next().unwrap());
@@ -226,12 +246,16 @@ fn compile_if_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_arg(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_arg");
+
     let mut inner = ast.into_inner();
 
     compile_expr(vm, inner.next().unwrap());
 }
 
 fn compile_call_stmt(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile_call_stmt");
+
     let mut inner = ast.into_inner();
 
     compile_expr(vm, inner.next().unwrap());
@@ -251,7 +275,9 @@ fn compile_call_stmt(vm: &mut Vm, ast: Pair<Rule>) {
     vm.add_instruction(i);
 }
 
-fn compile_stmt(vm: &mut Vm, ast: Pair<Rule>) {
+fn compile_stmt(vm: &mut Vm, ast: Pair<Rule>) { 
+    log::debug!("compile_stmt");
+
     for t in ast.into_inner() {
         match t.as_rule() {
             Rule::if_stmt => compile_if_stmt(vm, t),
@@ -265,6 +291,8 @@ fn compile_stmt(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_stmts(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile stmts");
+
     for t in ast.into_inner() {
         match t.as_rule() {
             Rule::stmt => compile_stmt(vm, t),
@@ -274,6 +302,8 @@ fn compile_stmts(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_file(vm: &mut Vm, ast: Pair<Rule>) {
+    log::debug!("compile file");
+
     let inner = ast.into_inner();
 
     for t in inner {
@@ -286,6 +316,8 @@ fn compile_file(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 pub fn compile(ast: Pairs<Rule>) -> Vm {
+    log::debug!("compile");
+
     let mut vm = Vm::new();
 
     for t in ast {

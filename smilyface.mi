@@ -1,0 +1,8 @@
+
+
+circle(400, 300, 300, "red");
+circle(300, 230, 80, "green");
+circle(500, 230, 80, "green");
+rectangle(200, 380, 400, 100, "white");
+
+sleep(5000);

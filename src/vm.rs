@@ -125,37 +125,45 @@ impl Vm {
                 },
                 ByteCode::Store => {
                     let v = self.stack.pop().unwrap();
-    
-                    println!("storing value {:?}", v);
+
+                    log::debug!("store {} with value {:?}", ins.arg, v);
     
                     self.store(ins.arg, v);
                 },
                 ByteCode::Load => {
                     let v = self.load(ins.arg);
+
+                    log::debug!("load index {} with value {:?}", &ins.arg, v);
     
                     self.stack.push(v);
                 },
-                ByteCode::BinMul => todo!(),
-                ByteCode::BinAdd => {
+                ByteCode::BinMul |
+                ByteCode::BinAdd |
+                ByteCode::BinMinus |
+                ByteCode::BinDivide => {
                     let tos = self.stack.pop().unwrap();
                     let tos1 = self.stack.pop().unwrap();
-    
-                    let tos_v = match tos {
-                        Value::Number(n) => n,
-                        _ => unimplemented!()
-                    };
-    
-                    let tos1_v = match tos1 {
-                        Value::Number(n) => n,
-                        _ => unimplemented!()
-                    };
-    
-                    let result = tos_v + tos1_v;
-    
-                    self.stack.push(Value::Number(result));
+
+                    log::debug!("{:?} {:?} {:?}", &tos1, ins.code, &tos);
+
+                    match (&ins.code, &tos1, &tos) {
+                        (ByteCode::BinMul, Value::Number(a), Value::Number(b)) => {
+                            self.stack.push(Value::Number(a * b));
+                        },
+                        (ByteCode::BinAdd, Value::Number(a), Value::Number(b)) => {
+                            self.stack.push(Value::Number(a + b));
+                        },
+                        (ByteCode::BinMinus, Value::Number(a), Value::Number(b)) => {
+                            self.stack.push(Value::Number(a - b));
+                        },
+                        (ByteCode::BinDivide, Value::Number(a), Value::Number(b)) => {
+                            self.stack.push(Value::Number(a / b));
+                        },
+                        _ => {
+                            panic!("invalid binary operation {:?} {:?} {:?}", tos, ins.code, tos1);
+                        }
+                    }
                 },
-                ByteCode::BinMinus => todo!(),
-                ByteCode::BinDivide => todo!(),
                 ByteCode::JumpIfTrue => todo!(),
                 ByteCode::JumpIfFalse => {
                     let tos = self.stack.pop().unwrap();
@@ -165,8 +173,6 @@ impl Vm {
                         Value::Number(1.0..) => {}
                         _ => {
                             self.pc = ins.arg as usize;
-    
-                            println!("jumping to {}", ins.arg);
                         }
                     };
                 },
@@ -183,7 +189,20 @@ impl Vm {
     
                     match v {
                         Value::Print => {
-                            println!("{:?}", args);
+                            let args = args.into_iter().rev();
+
+                            let p: String = args.map(|a| {
+                                match a {
+                                    Value::Number(n) => n.to_string(),
+                                    Value::String(s) => s,
+                                    Value::Boolean(b) => b.to_string(),
+                                    _ => {
+                                        panic!("arg does not support printing");
+                                    }
+                                }
+                            }).collect::<Vec<String>>().join(" ");
+
+                            println!("{}", p);
                         },
                         Value::Line => {   
                             if args.len() != 5 {
@@ -204,7 +223,7 @@ impl Vm {
                                     actions.push(Action::Line(x as u32, y as u32, w as u32, h as u32, color));
                                 },
                                 _ => {
-                                    println!("invalid line args");
+                                    panic!("invalid line call args");
                                 }
                             }
                         },
@@ -215,7 +234,7 @@ impl Vm {
     
                             match args[0] {
                                 Value::Number(n) => {
-                                    println!("sleeping for {}", n);
+                                    log::debug!("sleeping for {}", n);
     
                                     actions.push(Action::Sleep(n as u32));
     
@@ -245,7 +264,7 @@ impl Vm {
                                     actions.push(Action::Rectangle(x as u32, y as u32, w as u32, h as u32, color));
                                 },
                                 _ => {
-                                    println!("invalid line args");
+                                    panic!("invalid rectangle call args");
                                 }
                             }
                         },
@@ -266,7 +285,7 @@ impl Vm {
                                     actions.push(Action::Circle(x as u32, y as u32, r as u32, color));
                                 },
                                 _ => {
-                                    println!("invalid line args");
+                                    panic!("invalid circle call args");
                                 }
                             }
                         },
@@ -302,11 +321,50 @@ impl Vm {
                 ByteCode::Jump => {
                     self.pc = ins.arg as usize;
     
-                    println!("jumping to {}", ins.arg);
+                    log::debug!("jumping to {}", ins.arg);
                 },
             };
         }
 
         VmRunResult::Stop 
+    }
+
+    fn find_variable_name(&self, index: u32) -> Option<&str> {
+        for (key, value) in self.identifier_map.iter() {
+            if value == &index {
+                return Some(key);
+            }
+        }
+
+        None
+    }
+
+    pub fn disassemble(&self) {
+        let mut pc = 0;
+
+        while pc < self.instuctions.len() {
+            let ins = &self.instuctions[pc];
+
+            print!("Instruction: {:?} arg: {} ", ins.code, ins.arg);
+
+            match ins.code {
+                ByteCode::Load | ByteCode::LoadConst => {
+                    if let Some(name) = self.find_variable_name(ins.arg) {
+                        print!("{}", name);
+                    } else {
+                        print!("{:?}", self.load(ins.arg));
+                    }
+                },
+                ByteCode::Store => {
+                    let name = self.find_variable_name(ins.arg).unwrap();
+                    print!("{:?}", name);
+                },
+                _ => {}
+            };
+
+            println!();
+
+            pc += 1;
+        }
     }
 }

@@ -1,0 +1,22 @@
+
+
+var i = 0;
+var j = 0;
+
+while i < 10 begin
+    print("i", i);
+    while j < 10 begin
+        print("j", j);
+
+        var x = 30 + j * 60;
+        var y = 30 + i * 60;
+        
+        circle(x, y, 20, "red");
+
+        set j = j + 1;
+    end.
+    set j = 0;
+    set i = i + 1;
+end.
+
+sleep(5000);
