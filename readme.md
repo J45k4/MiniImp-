@@ -5,8 +5,8 @@ This project is not meant to be usefull but more like learning experience
 MiniImp is a simple intepreted programming langauge program code
 is first parsed using pest which is PEG grammar parser
 library. Grammar for the language can be found from
-"grammar.pest" file. When the code is parsed to AST
-it is compiled to vm bytecode and can be executed.
+"grammar.pest" file. The core is first parsed using the parser
+and then compiled to bytecode which is executed by the virtual machine.
 
 **Aarchitecture of the intepreter**
 
