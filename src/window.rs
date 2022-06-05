@@ -120,7 +120,7 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        self.canvas.clear();
+        self.draw_commands.clear();
     }
 
     pub fn work(&mut self) -> bool {

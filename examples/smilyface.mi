@@ -6,3 +6,7 @@ circle(500, 230, 80, "green");
 rectangle(200, 380, 400, 100, "white");
 
 sleep(5000);
+
+clear();
+
+sleep(2000);
