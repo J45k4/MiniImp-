@@ -14,9 +14,16 @@ fn convert_color(color: &str) -> Color {
     }
 }
 
+enum DrawCommand {
+    Line(Point, Point),
+    Rectangle(Rect),
+    Color(Color)
+}
+
 pub struct Window {
     event_pump: EventPump,
     canvas: Canvas<sdl2::video::Window>,
+    draw_commands: Vec<DrawCommand>
 }
 
 impl Window {
@@ -37,31 +44,34 @@ impl Window {
 
         Window {
             event_pump: event_pump,
-            canvas: canvas
+            canvas: canvas,
+            draw_commands: vec![]
         }
     }
 
     pub fn draw_line(&mut self, x: u32, y: u32, x2: u32, y2: u32, color: String) {
         log::debug!("drawing line from ({}, {}) to ({}, {}) color {}", x, y, x2, y2, color);
 
-        self.canvas.set_draw_color(convert_color(color.as_str()));
-        self.canvas.draw_line(
+        self.draw_commands.push(DrawCommand::Color(convert_color(color.as_str())));
+        self.draw_commands.push(DrawCommand::Line(
             Point::new(x as i32, y as i32), 
-            Point::new(x2 as i32, y2 as i32)
-        ).unwrap();
+            Point::new(x2 as i32, y2 as i32),
+        ));
     }
 
     pub fn draw_rect(&mut self, x: u32, y: u32, width: u32, height: u32, color: String) {
         log::debug!("drawing rectangle at ({}, {}) color {}", x, y, color);
 
-        self.canvas.set_draw_color(convert_color(color.as_str()));
-        self.canvas.fill_rect(Rect::new(x as i32, y as i32, width, height)).unwrap();
+        self.draw_commands.push(DrawCommand::Color(convert_color(color.as_str())));
+        self.draw_commands.push(DrawCommand::Rectangle(
+            Rect::new(x as i32, y as i32, width, height),
+        ));
     }
 
     pub fn draw_circle(&mut self, x: u32, y: u32, r: i32, color: String) {
         log::debug!("Drawing circle at ({}, {}) color {}", x, y, color);
 
-        self.canvas.set_draw_color(convert_color(color.as_str()));
+        self.draw_commands.push(DrawCommand::Color(convert_color(color.as_str())));
 
         let x = x as i32;
         let y = y as i32;
@@ -71,21 +81,25 @@ impl Window {
         let mut d = r - 1;
 
         while offsety >= offsetx {
-            self.canvas.draw_line(
+            self.draw_commands.push(DrawCommand::Line(
                 Point::new(x - offsety, y + offsetx), 
-                Point::new(x + offsety, y + offsetx)).unwrap();
+                Point::new(x + offsety, y + offsetx),
+            ));
 
-            self.canvas.draw_line(
+            self.draw_commands.push(DrawCommand::Line(
                 Point::new(x - offsetx, y + offsety), 
-                Point::new(x + offsetx, y + offsety)).unwrap();
+                Point::new(x + offsetx, y + offsety),
+            ));
             
-            self.canvas.draw_line(
+            self.draw_commands.push(DrawCommand::Line(
                 Point::new(x - offsetx, y - offsety), 
-                Point::new(x + offsetx, y - offsety)).unwrap();
+                Point::new(x + offsetx, y - offsety),
+            ));
 
-            self.canvas.draw_line(
+            self.draw_commands.push(DrawCommand::Line(
                 Point::new(x - offsety, y - offsetx), 
-                Point::new(x + offsety, y - offsetx)).unwrap();
+                Point::new(x + offsety, y - offsetx),
+            ));
 
             if d >= 2 * offsetx {
                 d -= 2 * offsetx + 1;
@@ -102,7 +116,7 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        self.canvas.clear();
+        self.draw_commands.clear();
     }
 
     pub fn work(&mut self) -> bool {
@@ -117,6 +131,21 @@ impl Window {
         }
 
         self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+        self.canvas.clear();
+
+        for draw_command in &self.draw_commands {
+            match draw_command {
+                DrawCommand::Line(start, end) => {
+                    self.canvas.draw_line(*start, *end).unwrap();
+                },
+                DrawCommand::Rectangle(rect) => {
+                    self.canvas.fill_rect(*rect).unwrap();
+                },
+                DrawCommand::Color(color) => {
+                    self.canvas.set_draw_color(*color);
+                },
+            }
+        }
 
         self.canvas.present();
 
