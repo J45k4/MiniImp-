@@ -8,11 +8,34 @@ library. Grammar for the language can be found from
 "grammar.pest" file. The core is first parsed using the parser
 and then compiled to bytecode which is executed by the virtual machine.
 
-**Aarchitecture of the intepreter**
+## Usage
 
-![alt text](architecture.png "Title")
+```bash
+# Executes program normally
+miniimp ./examples/smilyface.mi
+
+# Disassembles the bytecode
+miniimp dis ./examples/smilyface.mi
+
+# Executes program but shows more log
+miniimp ./examples/smilyface.mi --verbose
+
+```
+
+## Building
+
+In case you wish top compile this project yourself
+it can be done pretty much just with gargo build 
+command but you need to make sure you have SDL2
+library installed in your computer. 
+
+Instructions for installing SDL2 can be found
+from
+https://github.com/Rust-SDL2/rust-sdl2
 
 ## Architecture
+
+![alt text](architecture.png "Title")
 
 ### Bytecode
 
@@ -116,6 +139,15 @@ set x = 10;
 
 ```js
 call_stmt = { expr ~ "(" ~ arg* ~ ")" ~ ";" }
+
+color = "black" | 
+    "white" |
+    "red" |
+    "green" |
+    "blue" |
+    "yellow" |
+    "magenta" |
+    "cyan"
 
 // Prints hello world to console
 print("Hello world")
