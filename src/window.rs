@@ -46,6 +46,8 @@ impl Window {
     }
 
     pub fn draw_line(&mut self, x: u32, y: u32, x2: u32, y2: u32, color: String) {
+        log::debug!("drawing line from ({}, {}) to ({}, {}) color {}", x, y, x2, y2, color);
+
         self.canvas.set_draw_color(convert_color(color.as_str()));
         self.canvas.draw_line(
             Point::new(x as i32, y as i32), 
@@ -54,11 +56,15 @@ impl Window {
     }
 
     pub fn draw_rect(&mut self, x: u32, y: u32, width: u32, height: u32, color: String) {
+        log::debug!("drawing rectangle at ({}, {}) color {}", x, y, color);
+
         self.canvas.set_draw_color(convert_color(color.as_str()));
         self.canvas.fill_rect(Rect::new(x as i32, y as i32, width, height)).unwrap();
     }
 
     pub fn draw_circle(&mut self, x: u32, y: u32, r: i32, color: String) {
+        log::debug!("Drawing circle at ({}, {}) color {}", x, y, color);
+
         self.canvas.set_draw_color(convert_color(color.as_str()));
 
         let x = x as i32;

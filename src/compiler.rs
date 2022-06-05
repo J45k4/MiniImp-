@@ -46,7 +46,7 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
         };
 
         Ins {
-            code: ByteCode::LoadConst,
+            code: ByteCode::Load,
             arg: const_id
         }
     };

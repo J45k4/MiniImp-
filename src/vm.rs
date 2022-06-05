@@ -118,11 +118,6 @@ impl Vm {
             let ins = &self.instuctions[pc];
     
             match ins.code {
-                ByteCode::LoadConst => {
-                    let v = self.load(ins.arg);
-    
-                    self.stack.push(v);
-                },
                 ByteCode::Store => {
                     let v = self.stack.pop().unwrap();
 
@@ -255,8 +250,6 @@ impl Vm {
                             let w = args.next().unwrap();
                             let h = args.next().unwrap();
                             let color = args.next().unwrap();
-
-                            println!("rectangle color {:?}", color);
     
                             match (x, y, w, h, color) {
                                 (Value::Number(x), Value::Number(y), 
@@ -348,7 +341,7 @@ impl Vm {
             print!("Instruction: {:?} arg: {} ", ins.code, ins.arg);
 
             match ins.code {
-                ByteCode::Load | ByteCode::LoadConst => {
+                ByteCode::Load => {
                     if let Some(name) = self.find_variable_name(ins.arg) {
                         print!("{}", name);
                     } else {

@@ -18,25 +18,49 @@ it is compiled to vm bytecode and can be executed.
 
 **Load**
 
+Loads value pointed by arg to top of the stack.
+
 **Store**
+
+Pops top of the stack and stores it to value pointed by arg.
 
 **LoadConst**
 
+
 **BinMul**
+
+Pops TOS and TOS1 multiplies them and pushes to the stack. 
 
 **BinAdd**
 
+Pops TOS and TOS1 adds them and pushes the result to stack.
+
 **BinMinus**
+
+Pops TOS and TOS1 subtracts them and pushes the result to stack.
 
 **BinDivide**
 
+Pops TOS and TOS1 divides them and pushes the result to stack.
+
 **Jump**
+
+Sets instruction pointer value to arg value.
 
 **JumpIfFalse**
 
+Pops top of the stack and if the value is truthy then continues otherwise
+sets intruction pointer value to arg.
+
 **Call**
 
+Pops as many values from stack as arg value and then attemps to call with 
+next stack value.
+
 **CmpEq**
+
+Pops TOS and TOS1 and compares them acording to the arg operator
+and then pushes result to stack.
 
 
 ## Langauge reference

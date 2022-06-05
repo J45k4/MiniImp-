@@ -48,6 +48,8 @@ fn main() {
 
     logger_builder.init();
 
+    log::info!("file path: {}", path);
+
     let file_content = std::fs::read_to_string(path).unwrap();
     let ast = parser::parse_text(&file_content).unwrap();
     let mut vm = compile(ast);

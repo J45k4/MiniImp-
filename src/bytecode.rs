@@ -3,7 +3,6 @@
 pub enum ByteCode {
     Load,
     Store,
-    LoadConst,
     BinMul,
     BinAdd,
     BinMinus,
