@@ -1,10 +1,13 @@
 
 #[cfg(test)]
 mod tests {
+    use log::LevelFilter;
+
     use crate::{parser, vm::{Vm, Value}, compiler::compile};
 
     fn build_vm(source_code: &str) -> Vm {
         let ast = parser::parse_text(&source_code).unwrap();
+        log::debug!("{:#?}", ast);
         compile(ast)
     }
 
@@ -82,5 +85,32 @@ mod tests {
             Value::Boolean(b) => assert_eq!(b, true),
             _ => panic!("Expected boolean")
         };
+    }
+
+    #[test]
+    fn test_math_operations() {
+        // env_logger::Builder::new()
+        //     .filter_level(LevelFilter::Debug)
+        //     .init();
+
+        let code = r#"
+        var a = 1 +2 * (6 / 3);
+        "#;
+
+        let mut vm = build_vm(code);
+
+        vm.work();
+
+        let v = vm.get_variable("a");
+
+        match v {
+            Value::Number(n) => assert_eq!(n, 5.0),
+            _ => panic!("Expected number")
+        };
+    }
+
+    #[test]
+    fn test_while_loop() {
+        
     }
 }

@@ -5,7 +5,7 @@ use crate::parser::Rule;
 use crate::vm::{Vm, Value};
 
 fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
-    log::debug!("compile_factor");
+    log::debug!("compile_factor {:?}", ast.as_str());
 
     let mut inner = ast.into_inner();
 
@@ -13,8 +13,10 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
 
     let rule = inner.as_rule();
 
+    log::debug!("rule {:?} {}", rule, inner.as_str());
+
     if let Rule::expr = rule {
-        compile_expr(vm, inner.into_inner().next().unwrap());
+        compile_expr(vm, inner);
 
         return
     }
@@ -55,7 +57,7 @@ fn compile_factor(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_term(vm: &mut Vm, ast: Pair<Rule>) {
-    log::debug!("compile_term");
+    log::debug!("compile_term {}", ast.as_str());
 
     let mut inner = ast.into_inner();
 
@@ -70,6 +72,8 @@ fn compile_term(vm: &mut Vm, ast: Pair<Rule>) {
         _ => return
     };
 
+    log::debug!("term {:?}", code);
+
     compile_factor(vm, inner.next().unwrap());
 
     vm.add_instruction(Ins{
@@ -79,9 +83,11 @@ fn compile_term(vm: &mut Vm, ast: Pair<Rule>) {
 }
 
 fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
-    log::debug!("compile_expr");
+    log::debug!("compile_expr {}", ast.as_str());
 
     let mut inner = ast.into_inner();
+
+    log::debug!("inner {:?}", inner);
 
     loop {
         let next = match inner.next() {
@@ -90,6 +96,8 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
         };
 
         let next_rule = next.as_rule();
+
+        log::debug!("next_rule {:?}", next_rule);
 
         match next_rule {
             Rule::plus | Rule::minus => {
@@ -147,7 +155,9 @@ fn compile_expr(vm: &mut Vm, ast: Pair<Rule>) {
             Rule::term => {
                 compile_term(vm, next);
             },
-            _ => {}
+            _ => {
+                panic!("unsupported rule at this point")
+            }
         }
     }
 }

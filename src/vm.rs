@@ -1,5 +1,7 @@
 use std::{collections::{HashMap}};
 
+use log::log_enabled;
+
 use crate::bytecode::{Ins, ByteCode, EQUAL_TO_OP, SMALLER_THAN_OP, GREATER_THAN_OP, LOGICAL_AND, GREATER_THAN_EQUAL_TO_OP, NOT_EQUAL_TO_OP, SMALLER_THAN_EQUAL_TO_OP};
 
 pub enum Action {
@@ -127,7 +129,16 @@ impl Vm {
                 ByteCode::Load => {
                     let v = self.load(ins.arg);
 
-                    log::debug!("load index {} with value {:?}", &ins.arg, v);
+                    if log_enabled!(log::Level::Debug) {
+                        match self.find_variable_name(ins.arg) {
+                            Some(name) => {
+                                log::debug!("load {} {:?}", name, v);
+                            },
+                            None => {
+                                log::debug!("load {} {:?}", ins.arg, v);
+                            }
+                        }
+                    }
     
                     self.stack.push(v);
                 },
@@ -138,25 +149,29 @@ impl Vm {
                     let tos = self.stack.pop().unwrap();
                     let tos1 = self.stack.pop().unwrap();
 
-                    log::debug!("{:?} {:?} {:?}", &tos1, ins.code, &tos);
+                    
 
-                    match (&ins.code, &tos1, &tos) {
+                    let res = match (&ins.code, &tos1, &tos) {
                         (ByteCode::BinMul, Value::Number(a), Value::Number(b)) => {
-                            self.stack.push(Value::Number(a * b));
+                            Value::Number(a * b)
                         },
                         (ByteCode::BinAdd, Value::Number(a), Value::Number(b)) => {
-                            self.stack.push(Value::Number(a + b));
+                            Value::Number(a + b)
                         },
                         (ByteCode::BinMinus, Value::Number(a), Value::Number(b)) => {
-                            self.stack.push(Value::Number(a - b));
+                            Value::Number(a - b)
                         },
                         (ByteCode::BinDivide, Value::Number(a), Value::Number(b)) => {
-                            self.stack.push(Value::Number(a / b));
+                            Value::Number(a / b)
                         },
                         _ => {
                             panic!("invalid binary operation {:?} {:?} {:?}", tos, ins.code, tos1);
                         }
-                    }
+                    };
+
+                    log::debug!("{:?} {:?} {:?} = {:?}", &tos1, ins.code, &tos, &res);
+
+                    self.stack.push(res);
                 },
                 ByteCode::JumpIfFalse => {
                     let tos = self.stack.pop().unwrap();
