@@ -111,6 +111,25 @@ mod tests {
 
     #[test]
     fn test_while_loop() {
-        
+        let code = r#"
+        var i = 0;
+        while i < 10 begin
+            print(i);
+            set i = i + 1;
+        end.
+        "#;
+
+        let mut vm = build_vm(code);
+
+        let actions = vm.work();
+
+        let v = vm.get_variable("i");
+
+        match v {
+            Value::Number(n) => assert_eq!(n, 10.0),
+            _ => panic!("Expected number")
+        };
+
+        assert_eq!(actions.len(), 11);
     }
 }

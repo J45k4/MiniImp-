@@ -9,13 +9,9 @@ pub enum Action {
     Line(u32, u32, u32, u32, String),
     Rectangle(u32, u32, u32, u32, String),
     Circle(u32, u32, u32, String),
+    Print(String),
+    Stop,
     Clear
-}
-
-pub enum VmRunResult {
-    Continue,
-    Actions(Vec<Action>),
-    Stop
 }
 
 #[derive(Debug, Clone)]
@@ -107,7 +103,7 @@ impl Vm {
         self.instuctions.push(ins);
     }
 
-    pub fn work(&mut self) -> VmRunResult {
+    pub fn work(&mut self) -> Vec<Action> {
         let mut actions = vec![];
 
         let len = self.instuctions.len();
@@ -209,7 +205,7 @@ impl Vm {
                                 }
                             }).collect::<Vec<String>>().join(" ");
 
-                            println!("{}", p);
+                            actions.push(Action::Print(p));
                         },
                         Value::Line => {   
                             if args.len() != 5 {
@@ -245,7 +241,7 @@ impl Vm {
     
                                     actions.push(Action::Sleep(n as u32));
     
-                                    return VmRunResult::Actions(actions);
+                                    return actions;
                                 },
                                 _ => panic!("sleep needs a number")
                             }
@@ -331,7 +327,9 @@ impl Vm {
             };
         }
 
-        VmRunResult::Stop 
+        actions.push(Action::Stop);
+
+        actions
     }
 
     fn find_variable_name(&self, index: u32) -> Option<&str> {

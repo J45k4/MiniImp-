@@ -84,31 +84,33 @@ fn main() {
         };
 
         if !sleeping {
-            match vm.work() {
-                vm::VmRunResult::Continue => {},
-                vm::VmRunResult::Stop => return,
-                vm::VmRunResult::Actions(actions) => {
-                    for a in actions {
-                        match a {
-                            vm::Action::Sleep(t) => {
-                                sleep = Some((Instant::now(), t));
-                            },
-                            vm::Action::Line(x, y, x2, y2, color) => {
-                                win.draw_line(x, y, x2, y2, color);
-                            },
-                            vm::Action::Rectangle(x, y, x2, y2, color) => {
-                                win.draw_rect(x, y, x2, y2, color);
-                            },
-                            vm::Action::Circle(x, y, r, color) => {
-                                win.draw_circle(x, y, r as i32, color);
-                            },
-                            vm::Action::Clear => {
-                                win.clear();
-                            }                     
-                        }
-                    }
-                },
-            };
+            let actions = vm.work();
+
+            for a in actions {
+                match a {
+                    vm::Action::Sleep(t) => {
+                        sleep = Some((Instant::now(), t));
+                    },
+                    vm::Action::Line(x, y, x2, y2, color) => {
+                        win.draw_line(x, y, x2, y2, color);
+                    },
+                    vm::Action::Rectangle(x, y, x2, y2, color) => {
+                        win.draw_rect(x, y, x2, y2, color);
+                    },
+                    vm::Action::Circle(x, y, r, color) => {
+                        win.draw_circle(x, y, r as i32, color);
+                    },
+                    vm::Action::Clear => {
+                        win.clear();
+                    },
+                    vm::Action::Print(s) => {
+                        println!("{}", s);
+                    },
+                    vm::Action::Stop => {
+                        return;
+                    },         
+                }
+            }
         }
         
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
